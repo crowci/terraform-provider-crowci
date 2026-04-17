@@ -1,0 +1,33 @@
+repos:
+  - hooks:
+      - args:
+          - --maxkb=640
+        id: check-added-large-files
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - exclude: docs
+        id: trailing-whitespace
+    repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+  - hooks:
+      - id: conventional-pre-commit
+    repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.4.0
+  - hooks:
+      - id: renovate-config-validator
+    repo: https://github.com/renovatebot/pre-commit-hooks
+    rev: 43.110.13
+  - hooks:
+      - description: Generate terraform docs
+        entry: mise run docs
+        id: docs
+        language: system
+        name: docs
+        pass_filenames: false
+      - description: Run test
+        entry: mise run test
+        id: test
+        language: system
+        name: test
+        pass_filenames: false
+    repo: local

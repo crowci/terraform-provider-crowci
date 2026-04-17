@@ -1,0 +1,48 @@
+services:
+  server:
+    image: codefloe.com/crowci/crow-server:v5.9
+    restart: always
+    ports:
+      - ${CROW_SERVER_PORTS:-8000}:8000
+    volumes:
+      - ./.local/volumes/crow/server-data:/var/lib/crow/
+    environment:
+      CROW_OPEN: true
+      CROW_PLUGINS_TRUSTED_CLONE: "*"
+      CROW_ADMIN: ${CROW_ADMIN:-crow}
+      CROW_HOST: ${CROW_HOST:-http://localhost:8000}
+      CROW_FORGEJO: true
+      CROW_FORGEJO_URL: http://forgejo:3000 # This is causing issue of having wrong url when authenticating via localhost
+      CROW_EXPERT_FORGE_OAUTH_HOST: http://localhost:3000
+      CROW_FORGEJO_CLIENT: ${CROW_FORGEJO_CLIENT}
+      CROW_FORGEJO_SECRET: ${CROW_FORGEJO_SECRET}
+      CROW_AGENT_SECRET: ${CROW_AGENT_SECRET:-abc}
+      CROW_ENABLE_SWAGGER: true
+    depends_on:
+      - forgejo
+
+  agent:
+    image: codefloe.com/crowci/crow-agent:v5.9
+    command: agent
+    restart: always
+    depends_on:
+      - server
+    volumes:
+      - ./.local/volumes/crow/agent-config:/etc/crow
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      CROW_SERVER: server:9000
+      CROW_AGENT_SECRET: ${CROW_AGENT_SECRET:-abc}
+
+  forgejo:
+    image: codeberg.org/forgejo/forgejo:14
+    restart: always
+    environment:
+      USER_UID: 1000
+      USER_GID: 1000
+    volumes:
+      - ./.local/volumes/forgejo:/data
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - ${FORGEJO_PORT:-3000}:3000
+      # - '222:22'

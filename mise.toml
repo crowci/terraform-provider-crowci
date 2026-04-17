@@ -1,0 +1,15 @@
+[tools]
+"aqua:hashicorp/terraform-plugin-docs" = "0.24.0"
+go = "1.26.2"
+opentofu = "1.11.6"
+prek = "0.3.2"
+terraform = "1.14.8"
+
+[tasks.test]
+description = "Run acceptance tests against the local dev server"
+run = "TF_ACC=1 go test ./internal/provider/... -v -timeout 120s"
+env = { _.file = ".env" }
+
+[tasks.docs]
+description = "Generate documentations"
+run = "tfplugindocs"

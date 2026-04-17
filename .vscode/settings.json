@@ -1,0 +1,31 @@
+{
+  "[dockercompose]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "DavidAnson.vscode-markdownlint"
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.sortJSON": "always"
+  },
+  "editor.formatOnSave": true,
+  "git.repositoryScanIgnoredFolders": [".terraform"],
+  "go.terminal.activateEnvironment": false,
+  "prettier.bracketSpacing": false,
+  "terminal.integrated.automationProfile.osx": {
+    "args": ["--login"],
+    "path": "/usr/bin/zsh"
+  },
+  "vscode-yaml-sort.sortArrays": true,
+  "vscode-yaml-sort.sortOnSave": -1,
+  "vscode-yaml-sort.useLeadingDashes": false
+}
