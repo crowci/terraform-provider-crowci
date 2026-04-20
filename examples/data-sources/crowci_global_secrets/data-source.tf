@@ -1,0 +1,1 @@
+data "crowci_global_secrets" "all" {}

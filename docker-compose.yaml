@@ -1,6 +1,6 @@
 services:
   server:
-    image: codefloe.com/crowci/crow-server:v5.10
+    image: codefloe.com/crowci/crow-server:v5.10.1
     restart: always
     ports:
       - ${CROW_SERVER_PORTS:-8000}:8000
@@ -22,7 +22,7 @@ services:
       - forgejo
 
   agent:
-    image: codefloe.com/crowci/crow-agent:v5.10
+    image: codefloe.com/crowci/crow-agent:v5.10.1
     command: agent
     restart: always
     depends_on:

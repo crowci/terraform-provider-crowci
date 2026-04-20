@@ -98,3 +98,4 @@ terraform.rc
 
 .env
 .local
+CLAUDE.md
