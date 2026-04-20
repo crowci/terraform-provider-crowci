@@ -22,6 +22,10 @@ resource "crowci_global_secret" "secret_b" {
   name   = "acc-test-secrets-list-b"
   value  = "value-b"
   events = ["push", "tag"]
+  # Need this because if multiple global secret are created at the same time when no secret already exists,
+  # it will return error:
+  # UNIQUE constraint failed: secrets.org_id, secrets.repo_id, secrets.name
+  depends_on = [crowci_global_secret.secret_a]
 }
 
 data "crowci_global_secrets" "test" {

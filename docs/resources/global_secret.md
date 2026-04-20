@@ -3,12 +3,12 @@
 page_title: "crowci_global_secret Resource - terraform-provider-crowci"
 subcategory: ""
 description: |-
-  Global secret available to all repositories on the Crow CI server.
+  Global secret available to all repositories on the Crow CI server. Note: If you have no secret yet and you try to create multple global secret, you will encounter an error. A workaround is either you rerun the apply, or create an empty secret by hand or code using depends_on block.
 ---
 
 # crowci_global_secret (Resource)
 
-Global secret available to all repositories on the Crow CI server.
+Global secret available to all repositories on the Crow CI server. Note: If you have no secret yet and you try to create multple global secret, you will encounter an error. A workaround is either you rerun the apply, or create an empty secret by hand or code using `depends_on` block.
 
 ## Example Usage
 

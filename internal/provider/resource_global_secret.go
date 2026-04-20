@@ -50,7 +50,9 @@ func (r *globalSecretResource) Metadata(ctx context.Context, req resource.Metada
 
 func (r *globalSecretResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Global secret available to all repositories on the Crow CI server.",
+		Description: "Global secret available to all repositories on the Crow CI server. " +
+			"Note: If you have no secret yet and you try to create multple global secret, you will encounter an error. " +
+			"A workaround is either you rerun the apply, or create an empty secret by hand or code using `depends_on` block.",
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
 				Required:    true,
