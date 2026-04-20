@@ -100,6 +100,8 @@ func (p *crowciProvider) DataSources(ctx context.Context) []func() datasource.Da
 		NewForgesDataSource,
 		NewGlobalSecretDataSource,
 		NewGlobalSecretsDataSource,
+		NewOrganizationDataSource,
+		NewOrganizationsDataSource,
 	}
 }
 
