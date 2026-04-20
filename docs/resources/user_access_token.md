@@ -62,3 +62,14 @@ output "ci_bot_token" {
 - `token` (String, Sensitive) The token secret. Only populated on creation; not retrievable afterwards.
 - `updated_at` (Number) Last update time as Unix timestamp.
 - `user_id` (Number) ID of the user who owns this token.
+
+## Import
+
+Import is supported using the following syntax:
+
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
+```shell
+# Access token can be imported via id
+terraform import crowci_user_access_token.example 42
+```

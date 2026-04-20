@@ -148,6 +148,28 @@ resource "crowci_user_access_token" "test" {
 	})
 }
 
+func TestAccUserAccessTokenResource_import(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: protoV6ProviderFactories(),
+		Steps: []resource.TestStep{
+			{
+				Config: testProviderBlock + `
+resource "crowci_user_access_token" "test" {
+  name   = "acc-test-token-import"
+  scopes = ["repo:read"]
+}
+`,
+			},
+			{
+				ResourceName:            "crowci_user_access_token.test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token"},
+			},
+		},
+	})
+}
+
 func TestAccUserAccessTokensDataSource_list(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: protoV6ProviderFactories(),

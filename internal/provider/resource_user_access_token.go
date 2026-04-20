@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
@@ -19,6 +21,7 @@ import (
 
 var _ resource.Resource = (*userAccessTokenResource)(nil)
 var _ resource.ResourceWithConfigure = (*userAccessTokenResource)(nil)
+var _ resource.ResourceWithImportState = (*userAccessTokenResource)(nil)
 
 func NewUserAccessTokenResource() resource.Resource {
 	return &userAccessTokenResource{}
@@ -334,6 +337,18 @@ func (r *userAccessTokenResource) Delete(ctx context.Context, req resource.Delet
 			fmt.Sprintf("DELETE /user/access-tokens/%d returned status %d", data.ID.ValueInt64(), httpResp.StatusCode),
 		)
 	}
+}
+
+func (r *userAccessTokenResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	id, err := strconv.ParseInt(req.ID, 10, 64)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Invalid import ID",
+			fmt.Sprintf("Expected a numeric token ID, got %q: %s", req.ID, err),
+		)
+		return
+	}
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
 }
 
 // --- shared types ---
