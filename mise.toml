@@ -1,5 +1,5 @@
 [tools]
-"aqua:hashicorp/terraform-plugin-docs" = "0.24.0"
+"aqua:hashicorp/terraform-plugin-docs" = "0.25.0"
 go = "1.26.2"
 opentofu = "1.11.6"
 prek = "0.3.2"
