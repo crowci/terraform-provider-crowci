@@ -7,7 +7,7 @@ terraform = "1.14.9"
 
 [tasks.test]
 description = "Run acceptance tests against the local dev server"
-run = "TF_ACC=1 go test ./internal/provider/... -v -timeout 120s"
+run = "TF_ACC=1 go test -count=1 ./internal/provider/... -v -timeout 120s"
 env = { _.file = ".env" }
 
 [tasks.docs]
