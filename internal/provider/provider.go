@@ -102,6 +102,8 @@ func (p *crowciProvider) DataSources(ctx context.Context) []func() datasource.Da
 		NewGlobalSecretsDataSource,
 		NewOrganizationDataSource,
 		NewOrganizationsDataSource,
+		NewOrganizationSecretDataSource,
+		NewOrganizationSecretsDataSource,
 	}
 }
 
@@ -109,6 +111,7 @@ func (p *crowciProvider) Resources(ctx context.Context) []func() resource.Resour
 	return []func() resource.Resource{
 		NewUserAccessTokenResource,
 		NewGlobalSecretResource,
+		NewOrganizationSecretResource,
 	}
 }
 
