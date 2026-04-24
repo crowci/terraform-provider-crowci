@@ -1,6 +1,19 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "local>crowci/renovate-config"
+  "extends": ["local>crowci/renovate-config"],
+  "packageRules": [
+    {
+      "matchPackageNames": ["*"],
+      "schedule": ["* 0 * * 1"]
+    },
+    {
+      "groupName": "dev-tooling",
+      "matchPackageNames": [
+        "/pre-commit/",
+        "/renovate/",
+        "/terraform-plugin-docs/"
+      ],
+      "schedule": ["* 0 1 * *"]
+    }
   ]
 }
