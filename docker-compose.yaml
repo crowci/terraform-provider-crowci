@@ -22,7 +22,7 @@ services:
       - forgejo
 
   agent:
-    image: codefloe.com/crowci/crow-agent:v5.10.2
+    image: codefloe.com/crowci/crow-agent:v5.10.3
     command: agent
     restart: always
     depends_on:
