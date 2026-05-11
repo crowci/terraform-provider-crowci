@@ -54,7 +54,8 @@
 - Getting the crow API `openapi.json` file
 
    ```bash
-   curl http://localhost:8000/api/v1/openapi.json --output ./local/openapi.json
+   mkdir -p .local
+   curl http://localhost:8000/api/v1/openapi.json --output ./.local/openapi.json
    ```
 
 - This file can be useful for feeding into coding agent for generating the code
