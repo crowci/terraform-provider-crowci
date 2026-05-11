@@ -14,6 +14,11 @@
         "/terraform-plugin-docs/"
       ],
       "schedule": ["* 0 1 * *"]
+    },
+    {
+      "automerge": false,
+      "matchPackageNames": ["/crow/"],
+      "matchUpdateTypes": ["major", "minor"]
     }
   ]
 }
