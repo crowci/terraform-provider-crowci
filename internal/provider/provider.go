@@ -107,6 +107,8 @@ func (p *crowciProvider) DataSources(ctx context.Context) []func() datasource.Da
 		NewRepositoryDataSource,
 		NewRepositorySecretDataSource,
 		NewRepositorySecretsDataSource,
+		NewUserRepositoriesActiveDataSource,
+		NewUserRepositoriesAvailableDataSource,
 	}
 }
 
