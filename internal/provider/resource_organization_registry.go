@@ -60,9 +60,8 @@ type organizationRegistryResourceModel struct {
 	Username types.String `tfsdk:"username"`
 	Password types.String `tfsdk:"password"`
 	// computed
-	ID        types.Int64  `tfsdk:"id"`
-	RepoID    types.Int64  `tfsdk:"repo_id"`
-	ReadOnly  types.Bool   `tfsdk:"readonly"`
+	ID       types.Int64 `tfsdk:"id"`
+	ReadOnly types.Bool  `tfsdk:"readonly"`
 	CreatedAt types.Int64  `tfsdk:"created_at"`
 	UpdatedAt types.Int64  `tfsdk:"updated_at"`
 }
@@ -116,13 +115,6 @@ func (r *organizationRegistryResource) Schema(_ context.Context, _ resource.Sche
 			"id": schema.Int64Attribute{
 				Computed:    true,
 				Description: "Registry ID assigned by Crow CI.",
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.UseStateForUnknown(),
-				},
-			},
-			"repo_id": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Repo scope of the registry.",
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.UseStateForUnknown(),
 				},
@@ -400,7 +392,6 @@ func (r *organizationRegistryResource) ImportState(ctx context.Context, req reso
 func mapRegistryToState(r *registryAPIResponse, data *organizationRegistryResourceModel) {
 	data.ID = types.Int64Value(r.ID)
 	data.OrgID = types.Int64Value(r.OrgID)
-	data.RepoID = int64NullIfZero(r.RepoID)
 	data.Address = types.StringValue(r.Address)
 	data.Username = types.StringValue(r.Username)
 	data.ReadOnly = types.BoolValue(r.ReadOnly)

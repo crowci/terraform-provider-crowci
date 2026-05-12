@@ -32,7 +32,6 @@ type organizationSecretItemModel struct {
 	Name      types.String `tfsdk:"name"`
 	Events    types.List   `tfsdk:"events"`
 	Images    types.List   `tfsdk:"images"`
-	RepoID    types.Int64  `tfsdk:"repo_id"`
 	Source    types.String `tfsdk:"source"`
 	CreatedAt types.Int64  `tfsdk:"created_at"`
 	UpdatedAt types.Int64  `tfsdk:"updated_at"`
@@ -61,10 +60,6 @@ func (d *organizationSecretsDataSource) Schema(_ context.Context, _ datasource.S
 			Computed:    true,
 			ElementType: types.StringType,
 			Description: "Container images the secret is available to.",
-		},
-		"repo_id": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Repo scope of the secret.",
 		},
 		"source": schema.StringAttribute{
 			Computed:    true,
@@ -161,7 +156,6 @@ func (d *organizationSecretsDataSource) Read(ctx context.Context, req datasource
 		secrets[i] = organizationSecretItemModel{
 			ID:        types.Int64Value(s.ID),
 			Name:      types.StringValue(s.Name),
-			RepoID:    int64NullIfZero(s.RepoID),
 			Source:    types.StringValue(s.Source),
 			CreatedAt: types.Int64Value(s.CreatedAt),
 			UpdatedAt: types.Int64Value(s.UpdatedAt),

@@ -29,7 +29,6 @@ type organizationRegistriesDataSourceModel struct {
 
 type registryItemModel struct {
 	ID        types.Int64  `tfsdk:"id"`
-	RepoID    types.Int64  `tfsdk:"repo_id"`
 	Address   types.String `tfsdk:"address"`
 	Username  types.String `tfsdk:"username"`
 	ReadOnly  types.Bool   `tfsdk:"readonly"`
@@ -46,10 +45,6 @@ func (d *organizationRegistriesDataSource) Schema(_ context.Context, _ datasourc
 		"id": schema.Int64Attribute{
 			Computed:    true,
 			Description: "Registry ID.",
-		},
-		"repo_id": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Repo scope of the registry.",
 		},
 		"address": schema.StringAttribute{
 			Computed:    true,
@@ -152,9 +147,8 @@ func (d *organizationRegistriesDataSource) Read(ctx context.Context, req datasou
 	registries := make([]registryItemModel, len(all))
 	for i, r := range all {
 		registries[i] = registryItemModel{
-			ID:        types.Int64Value(r.ID),
-			RepoID:    int64NullIfZero(r.RepoID),
-			Address:   types.StringValue(r.Address),
+			ID:      types.Int64Value(r.ID),
+			Address: types.StringValue(r.Address),
 			Username:  types.StringValue(r.Username),
 			ReadOnly:  types.BoolValue(r.ReadOnly),
 			CreatedAt: types.Int64Value(r.CreatedAt),

@@ -63,7 +63,6 @@ type organizationSecretResourceModel struct {
 	Images types.List `tfsdk:"images"`
 	// computed
 	ID        types.Int64  `tfsdk:"id"`
-	RepoID    types.Int64  `tfsdk:"repo_id"`
 	Source    types.String `tfsdk:"source"`
 	CreatedAt types.Int64  `tfsdk:"created_at"`
 	UpdatedAt types.Int64  `tfsdk:"updated_at"`
@@ -113,10 +112,6 @@ func (r *organizationSecretResource) Schema(ctx context.Context, req resource.Sc
 			"id": schema.Int64Attribute{
 				Computed:    true,
 				Description: "Secret ID assigned by Crow CI.",
-			},
-			"repo_id": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Repo scope of the secret.",
 			},
 			"source": schema.StringAttribute{
 				Computed:    true,
@@ -388,7 +383,6 @@ func mapOrgSecretToState(r *globalSecretAPIResponse, data *organizationSecretRes
 	data.ID = types.Int64Value(r.ID)
 	data.Name = types.StringValue(r.Name)
 	data.OrgID = types.Int64Value(r.OrgID)
-	data.RepoID = int64NullIfZero(r.RepoID)
 	data.Source = types.StringValue(r.Source)
 	data.CreatedAt = types.Int64Value(r.CreatedAt)
 	data.UpdatedAt = types.Int64Value(r.UpdatedAt)

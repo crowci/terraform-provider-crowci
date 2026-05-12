@@ -48,7 +48,6 @@ resource "crowci_organization_secret" "docker_password" {
 
 - `created_at` (Number) Creation time as a Unix timestamp.
 - `id` (Number) Secret ID assigned by Crow CI.
-- `repo_id` (Number) Repo scope of the secret.
 - `source` (String) Source of the secret.
 - `updated_at` (Number) Last update time as a Unix timestamp.
 
