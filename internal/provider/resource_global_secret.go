@@ -37,8 +37,6 @@ type globalSecretResourceModel struct {
 	Images types.List `tfsdk:"images"`
 	// computed
 	ID        types.Int64  `tfsdk:"id"`
-	OrgID     types.Int64  `tfsdk:"org_id"`
-	RepoID    types.Int64  `tfsdk:"repo_id"`
 	Source    types.String `tfsdk:"source"`
 	CreatedAt types.Int64  `tfsdk:"created_at"`
 	UpdatedAt types.Int64  `tfsdk:"updated_at"`
@@ -83,14 +81,6 @@ func (r *globalSecretResource) Schema(ctx context.Context, req resource.SchemaRe
 			"id": schema.Int64Attribute{
 				Computed:    true,
 				Description: "Secret ID assigned by Crow CI.",
-			},
-			"org_id": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Org scope of the secret.",
-			},
-			"repo_id": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Repo scope of the secret.",
 			},
 			"source": schema.StringAttribute{
 				Computed:    true,
@@ -338,8 +328,6 @@ func (r *globalSecretResource) ImportState(ctx context.Context, req resource.Imp
 func mapGlobalSecretToState(r *globalSecretAPIResponse, data *globalSecretResourceModel) {
 	data.ID = types.Int64Value(r.ID)
 	data.Name = types.StringValue(r.Name)
-	data.OrgID = int64NullIfZero(r.OrgID)
-	data.RepoID = int64NullIfZero(r.RepoID)
 	data.Source = types.StringValue(r.Source)
 	data.CreatedAt = types.Int64Value(r.CreatedAt)
 	data.UpdatedAt = types.Int64Value(r.UpdatedAt)

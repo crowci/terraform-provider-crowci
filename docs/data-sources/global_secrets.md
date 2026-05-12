@@ -33,7 +33,5 @@ Read-Only:
 - `id` (Number) Secret ID.
 - `images` (List of String) Container images the secret is available to.
 - `name` (String) Secret name.
-- `org_id` (Number) Org scope of the secret.
-- `repo_id` (Number) Repo scope of the secret.
 - `source` (String) Source of the secret.
 - `updated_at` (Number) Last update time as a Unix timestamp.

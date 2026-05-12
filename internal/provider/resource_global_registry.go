@@ -38,8 +38,6 @@ type globalRegistryResourceModel struct {
 	Password types.String `tfsdk:"password"`
 	// computed
 	ID        types.Int64  `tfsdk:"id"`
-	OrgID     types.Int64  `tfsdk:"org_id"`
-	RepoID    types.Int64  `tfsdk:"repo_id"`
 	ReadOnly  types.Bool   `tfsdk:"readonly"`
 	CreatedAt types.Int64  `tfsdk:"created_at"`
 	UpdatedAt types.Int64  `tfsdk:"updated_at"`
@@ -75,20 +73,6 @@ func (r *globalRegistryResource) Schema(_ context.Context, _ resource.SchemaRequ
 			"id": schema.Int64Attribute{
 				Computed:    true,
 				Description: "Registry ID assigned by Crow CI.",
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.UseStateForUnknown(),
-				},
-			},
-			"org_id": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Organization scope of the registry.",
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.UseStateForUnknown(),
-				},
-			},
-			"repo_id": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Repo scope of the registry.",
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.UseStateForUnknown(),
 				},
@@ -344,8 +328,6 @@ func mapGlobalRegistryToState(r *registryAPIResponse, data *globalRegistryResour
 	data.ID = types.Int64Value(r.ID)
 	data.Address = types.StringValue(r.Address)
 	data.Username = types.StringValue(r.Username)
-	data.OrgID = int64NullIfZero(r.OrgID)
-	data.RepoID = int64NullIfZero(r.RepoID)
 	data.ReadOnly = types.BoolValue(r.ReadOnly)
 	data.CreatedAt = types.Int64Value(r.CreatedAt)
 	data.UpdatedAt = types.Int64Value(r.UpdatedAt)

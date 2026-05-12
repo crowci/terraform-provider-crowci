@@ -27,8 +27,6 @@ type globalSecretDataSourceModel struct {
 	ID        types.Int64  `tfsdk:"id"`
 	Events    types.List   `tfsdk:"events"`
 	Images    types.List   `tfsdk:"images"`
-	OrgID     types.Int64  `tfsdk:"org_id"`
-	RepoID    types.Int64  `tfsdk:"repo_id"`
 	Source    types.String `tfsdk:"source"`
 	CreatedAt types.Int64  `tfsdk:"created_at"`
 	UpdatedAt types.Int64  `tfsdk:"updated_at"`
@@ -71,14 +69,6 @@ func (d *globalSecretDataSource) Schema(ctx context.Context, req datasource.Sche
 				Computed:    true,
 				ElementType: types.StringType,
 				Description: "Images the secret is available to.",
-			},
-			"org_id": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Org scope of the secret.",
-			},
-			"repo_id": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Repo scope of the secret.",
 			},
 			"source": schema.StringAttribute{
 				Computed:    true,
@@ -154,8 +144,6 @@ func (d *globalSecretDataSource) Read(ctx context.Context, req datasource.ReadRe
 	}
 
 	data.ID = types.Int64Value(result.ID)
-	data.OrgID = int64NullIfZero(result.OrgID)
-	data.RepoID = int64NullIfZero(result.RepoID)
 	data.Source = types.StringValue(result.Source)
 	data.CreatedAt = types.Int64Value(result.CreatedAt)
 	data.UpdatedAt = types.Int64Value(result.UpdatedAt)

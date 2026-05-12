@@ -31,7 +31,5 @@ data "crowci_global_secret" "example" {
 - `events` (List of String) Events that trigger the secret.
 - `id` (Number) Secret ID.
 - `images` (List of String) Images the secret is available to.
-- `org_id` (Number) Org scope of the secret.
-- `repo_id` (Number) Repo scope of the secret.
 - `source` (String) Source of the secret.
 - `updated_at` (Number) Last update time as a Unix timestamp.

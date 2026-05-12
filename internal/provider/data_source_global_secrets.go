@@ -31,8 +31,6 @@ type globalSecretItemModel struct {
 	Name      types.String `tfsdk:"name"`
 	Events    types.List   `tfsdk:"events"`
 	Images    types.List   `tfsdk:"images"`
-	OrgID     types.Int64  `tfsdk:"org_id"`
-	RepoID    types.Int64  `tfsdk:"repo_id"`
 	Source    types.String `tfsdk:"source"`
 	CreatedAt types.Int64  `tfsdk:"created_at"`
 	UpdatedAt types.Int64  `tfsdk:"updated_at"`
@@ -61,14 +59,6 @@ func (d *globalSecretsDataSource) Schema(_ context.Context, _ datasource.SchemaR
 			Computed:    true,
 			ElementType: types.StringType,
 			Description: "Container images the secret is available to.",
-		},
-		"org_id": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Org scope of the secret.",
-		},
-		"repo_id": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Repo scope of the secret.",
 		},
 		"source": schema.StringAttribute{
 			Computed:    true,
@@ -155,8 +145,6 @@ func (d *globalSecretsDataSource) Read(ctx context.Context, _ datasource.ReadReq
 		secrets[i] = globalSecretItemModel{
 			ID:        types.Int64Value(s.ID),
 			Name:      types.StringValue(s.Name),
-			OrgID:     int64NullIfZero(s.OrgID),
-			RepoID:    int64NullIfZero(s.RepoID),
 			Source:    types.StringValue(s.Source),
 			CreatedAt: types.Int64Value(s.CreatedAt),
 			UpdatedAt: types.Int64Value(s.UpdatedAt),

@@ -25,8 +25,6 @@ type globalRegistryDataSource struct {
 type globalRegistryDataSourceModel struct {
 	Address   types.String `tfsdk:"address"`
 	ID        types.Int64  `tfsdk:"id"`
-	OrgID     types.Int64  `tfsdk:"org_id"`
-	RepoID    types.Int64  `tfsdk:"repo_id"`
 	Username  types.String `tfsdk:"username"`
 	ReadOnly  types.Bool   `tfsdk:"readonly"`
 	CreatedAt types.Int64  `tfsdk:"created_at"`
@@ -48,14 +46,6 @@ func (d *globalRegistryDataSource) Schema(_ context.Context, _ datasource.Schema
 			"id": schema.Int64Attribute{
 				Computed:    true,
 				Description: "Registry ID assigned by Crow CI.",
-			},
-			"org_id": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Organization scope of the registry.",
-			},
-			"repo_id": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Repo scope of the registry.",
 			},
 			"username": schema.StringAttribute{
 				Computed:    true,
@@ -135,8 +125,6 @@ func (d *globalRegistryDataSource) Read(ctx context.Context, req datasource.Read
 	}
 
 	data.ID = types.Int64Value(result.ID)
-	data.OrgID = int64NullIfZero(result.OrgID)
-	data.RepoID = int64NullIfZero(result.RepoID)
 	data.Username = types.StringValue(result.Username)
 	data.ReadOnly = types.BoolValue(result.ReadOnly)
 	data.CreatedAt = types.Int64Value(result.CreatedAt)
