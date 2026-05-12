@@ -109,6 +109,8 @@ func (p *crowciProvider) DataSources(ctx context.Context) []func() datasource.Da
 		NewRepositorySecretsDataSource,
 		NewUserRepositoriesActiveDataSource,
 		NewUserRepositoriesAvailableDataSource,
+		NewRepositoryCronJobDataSource,
+		NewRepositoryCronJobsDataSource,
 	}
 }
 
@@ -119,6 +121,7 @@ func (p *crowciProvider) Resources(ctx context.Context) []func() resource.Resour
 		NewOrganizationSecretResource,
 		NewRepositoryResource,
 		NewRepositorySecretResource,
+		NewRepositoryCronJobResource,
 	}
 }
 
