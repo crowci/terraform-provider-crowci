@@ -31,7 +31,6 @@ data "crowci_repository_registry" "example" {
 
 - `created_at` (Number) Creation time as a Unix timestamp.
 - `id` (Number) Registry ID assigned by Crow CI.
-- `org_id` (Number) Organization scope of the registry.
 - `readonly` (Boolean) Whether the registry is read-only.
 - `updated_at` (Number) Last update time as a Unix timestamp.
 - `username` (String) Registry username.

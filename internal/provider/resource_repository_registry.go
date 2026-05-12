@@ -46,7 +46,6 @@ type repositoryRegistryResourceModel struct {
 	Password types.String `tfsdk:"password"`
 	// computed
 	ID        types.Int64  `tfsdk:"id"`
-	OrgID     types.Int64  `tfsdk:"org_id"`
 	ReadOnly  types.Bool   `tfsdk:"readonly"`
 	CreatedAt types.Int64  `tfsdk:"created_at"`
 	UpdatedAt types.Int64  `tfsdk:"updated_at"`
@@ -104,13 +103,6 @@ func (r *repositoryRegistryResource) Schema(_ context.Context, _ resource.Schema
 			"id": schema.Int64Attribute{
 				Computed:    true,
 				Description: "Registry ID assigned by Crow CI.",
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.UseStateForUnknown(),
-				},
-			},
-			"org_id": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Organization scope of the registry.",
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.UseStateForUnknown(),
 				},
@@ -388,7 +380,6 @@ func (r *repositoryRegistryResource) ImportState(ctx context.Context, req resour
 func mapRepoRegistryToState(r *registryAPIResponse, data *repositoryRegistryResourceModel) {
 	data.ID = types.Int64Value(r.ID)
 	data.RepoID = types.Int64Value(r.RepoID)
-	data.OrgID = int64NullIfZero(r.OrgID)
 	data.Address = types.StringValue(r.Address)
 	data.Username = types.StringValue(r.Username)
 	data.ReadOnly = types.BoolValue(r.ReadOnly)

@@ -37,7 +37,6 @@ Read-Only:
 - `address` (String) Registry address.
 - `created_at` (Number) Creation time as a Unix timestamp.
 - `id` (Number) Registry ID.
-- `org_id` (Number) Organization scope of the registry.
 - `readonly` (Boolean) Whether the registry is read-only.
 - `updated_at` (Number) Last update time as a Unix timestamp.
 - `username` (String) Registry username.

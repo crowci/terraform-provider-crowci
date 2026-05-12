@@ -26,7 +26,6 @@ type repositoryRegistryDataSourceModel struct {
 	RepoID    types.Int64  `tfsdk:"repo_id"`
 	Address   types.String `tfsdk:"address"`
 	ID        types.Int64  `tfsdk:"id"`
-	OrgID     types.Int64  `tfsdk:"org_id"`
 	Username  types.String `tfsdk:"username"`
 	ReadOnly  types.Bool   `tfsdk:"readonly"`
 	CreatedAt types.Int64  `tfsdk:"created_at"`
@@ -52,10 +51,6 @@ func (d *repositoryRegistryDataSource) Schema(_ context.Context, _ datasource.Sc
 			"id": schema.Int64Attribute{
 				Computed:    true,
 				Description: "Registry ID assigned by Crow CI.",
-			},
-			"org_id": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Organization scope of the registry.",
 			},
 			"username": schema.StringAttribute{
 				Computed:    true,
@@ -135,7 +130,6 @@ func (d *repositoryRegistryDataSource) Read(ctx context.Context, req datasource.
 	}
 
 	data.ID = types.Int64Value(result.ID)
-	data.OrgID = int64NullIfZero(result.OrgID)
 	data.Username = types.StringValue(result.Username)
 	data.ReadOnly = types.BoolValue(result.ReadOnly)
 	data.CreatedAt = types.Int64Value(result.CreatedAt)
