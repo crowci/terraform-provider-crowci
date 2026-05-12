@@ -20,7 +20,7 @@ func NewUserAccessTokenDataSource() datasource.DataSource {
 }
 
 type userAccessTokenDataSource struct {
-	client *crowciClient
+	datasourceWithClient
 }
 
 type userAccessTokenDataSourceModel struct {
@@ -92,21 +92,6 @@ func (d *userAccessTokenDataSource) Schema(ctx context.Context, req datasource.S
 			},
 		},
 	}
-}
-
-func (d *userAccessTokenDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	client, ok := req.ProviderData.(*crowciClient)
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected provider data type",
-			fmt.Sprintf("Expected *crowciClient, got %T", req.ProviderData),
-		)
-		return
-	}
-	d.client = client
 }
 
 func (d *userAccessTokenDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {

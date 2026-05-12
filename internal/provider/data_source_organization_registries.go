@@ -2,9 +2,7 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -19,7 +17,7 @@ func NewOrganizationRegistriesDataSource() datasource.DataSource {
 }
 
 type organizationRegistriesDataSource struct {
-	client *crowciClient
+	datasourceWithClient
 }
 
 type organizationRegistriesDataSourceModel struct {
@@ -85,21 +83,6 @@ func (d *organizationRegistriesDataSource) Schema(_ context.Context, _ datasourc
 	}
 }
 
-func (d *organizationRegistriesDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	client, ok := req.ProviderData.(*crowciClient)
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected provider data type",
-			fmt.Sprintf("Expected *crowciClient, got %T", req.ProviderData),
-		)
-		return
-	}
-	d.client = client
-}
-
 func (d *organizationRegistriesDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data organizationRegistriesDataSourceModel
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -107,41 +90,10 @@ func (d *organizationRegistriesDataSource) Read(ctx context.Context, req datasou
 		return
 	}
 
-	var all []registryAPIResponse
-
-	for page := 1; ; page++ {
-		endpoint := fmt.Sprintf("%s/api/v1/orgs/%d/registries?page=%d&perPage=50", d.client.Host, data.OrgID.ValueInt64(), page)
-		httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-		if err != nil {
-			resp.Diagnostics.AddError("Failed to build request", err.Error())
-			return
-		}
-
-		httpResp, err := d.client.HTTPClient.Do(httpReq)
-		if err != nil {
-			resp.Diagnostics.AddError("API request failed", err.Error())
-			return
-		}
-		defer httpResp.Body.Close()
-
-		if httpResp.StatusCode != http.StatusOK {
-			resp.Diagnostics.AddError(
-				"Unexpected API response",
-				fmt.Sprintf("GET /orgs/%d/registries returned status %d", data.OrgID.ValueInt64(), httpResp.StatusCode),
-			)
-			return
-		}
-
-		var pageResults []registryAPIResponse
-		if err := json.NewDecoder(httpResp.Body).Decode(&pageResults); err != nil {
-			resp.Diagnostics.AddError("Failed to decode response", err.Error())
-			return
-		}
-
-		all = append(all, pageResults...)
-		if len(pageResults) < 50 {
-			break
-		}
+	all, err := fetchAllPages[registryAPIResponse](ctx, d.client, fmt.Sprintf("%s/api/v1/orgs/%d/registries", d.client.Host, data.OrgID.ValueInt64()))
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to fetch registries", err.Error())
+		return
 	}
 
 	registries := make([]registryItemModel, len(all))

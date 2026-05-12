@@ -2,9 +2,7 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -19,7 +17,7 @@ func NewForgesDataSource() datasource.DataSource {
 }
 
 type forgesDataSource struct {
-	client *crowciClient
+	datasourceWithClient
 }
 
 type forgesDataSourceModel struct {
@@ -93,57 +91,11 @@ func (d *forgesDataSource) Schema(_ context.Context, _ datasource.SchemaRequest,
 	}
 }
 
-func (d *forgesDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	client, ok := req.ProviderData.(*crowciClient)
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected provider data type",
-			fmt.Sprintf("Expected *crowciClient, got %T", req.ProviderData),
-		)
-		return
-	}
-	d.client = client
-}
-
 func (d *forgesDataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var all []forgeAPIResponse
-
-	for page := 1; ; page++ {
-		endpoint := fmt.Sprintf("%s/api/v1/forges?page=%d&perPage=50", d.client.Host, page)
-		httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-		if err != nil {
-			resp.Diagnostics.AddError("Failed to build request", err.Error())
-			return
-		}
-
-		httpResp, err := d.client.HTTPClient.Do(httpReq)
-		if err != nil {
-			resp.Diagnostics.AddError("API request failed", err.Error())
-			return
-		}
-		defer httpResp.Body.Close()
-
-		if httpResp.StatusCode != http.StatusOK {
-			resp.Diagnostics.AddError(
-				"Unexpected API response",
-				fmt.Sprintf("GET /forges returned status %d", httpResp.StatusCode),
-			)
-			return
-		}
-
-		var page_results []forgeAPIResponse
-		if err := json.NewDecoder(httpResp.Body).Decode(&page_results); err != nil {
-			resp.Diagnostics.AddError("Failed to decode response", err.Error())
-			return
-		}
-
-		all = append(all, page_results...)
-		if len(page_results) < 50 {
-			break
-		}
+	all, err := fetchAllPages[forgeAPIResponse](ctx, d.client, fmt.Sprintf("%s/api/v1/forges", d.client.Host))
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to fetch forges", err.Error())
+		return
 	}
 
 	forges := make([]forgeModel, len(all))

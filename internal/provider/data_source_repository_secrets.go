@@ -2,9 +2,7 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -19,7 +17,7 @@ func NewRepositorySecretsDataSource() datasource.DataSource {
 }
 
 type repositorySecretsDataSource struct {
-	client *crowciClient
+	datasourceWithClient
 }
 
 type repositorySecretsDataSourceModel struct {
@@ -92,21 +90,6 @@ func (d *repositorySecretsDataSource) Schema(_ context.Context, _ datasource.Sch
 	}
 }
 
-func (d *repositorySecretsDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	client, ok := req.ProviderData.(*crowciClient)
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected provider data type",
-			fmt.Sprintf("Expected *crowciClient, got %T", req.ProviderData),
-		)
-		return
-	}
-	d.client = client
-}
-
 func (d *repositorySecretsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data repositorySecretsDataSourceModel
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -114,41 +97,10 @@ func (d *repositorySecretsDataSource) Read(ctx context.Context, req datasource.R
 		return
 	}
 
-	var all []globalSecretAPIResponse
-
-	for page := 1; ; page++ {
-		endpoint := fmt.Sprintf("%s/api/v1/repos/%d/secrets?page=%d&perPage=50", d.client.Host, data.RepoID.ValueInt64(), page)
-		httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-		if err != nil {
-			resp.Diagnostics.AddError("Failed to build request", err.Error())
-			return
-		}
-
-		httpResp, err := d.client.HTTPClient.Do(httpReq)
-		if err != nil {
-			resp.Diagnostics.AddError("API request failed", err.Error())
-			return
-		}
-		defer httpResp.Body.Close()
-
-		if httpResp.StatusCode != http.StatusOK {
-			resp.Diagnostics.AddError(
-				"Unexpected API response",
-				fmt.Sprintf("GET /repos/%d/secrets returned status %d", data.RepoID.ValueInt64(), httpResp.StatusCode),
-			)
-			return
-		}
-
-		var pageResults []globalSecretAPIResponse
-		if err := json.NewDecoder(httpResp.Body).Decode(&pageResults); err != nil {
-			resp.Diagnostics.AddError("Failed to decode response", err.Error())
-			return
-		}
-
-		all = append(all, pageResults...)
-		if len(pageResults) < 50 {
-			break
-		}
+	all, err := fetchAllPages[globalSecretAPIResponse](ctx, d.client, fmt.Sprintf("%s/api/v1/repos/%d/secrets", d.client.Host, data.RepoID.ValueInt64()))
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to fetch secrets", err.Error())
+		return
 	}
 
 	secrets := make([]repositorySecretItemModel, len(all))

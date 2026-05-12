@@ -19,7 +19,7 @@ func NewRepositoryCronJobDataSource() datasource.DataSource {
 }
 
 type repositoryCronJobDataSource struct {
-	client *crowciClient
+	datasourceWithClient
 }
 
 type repositoryCronJobDataSourceModel struct {
@@ -90,21 +90,6 @@ func (d *repositoryCronJobDataSource) Schema(_ context.Context, _ datasource.Sch
 			},
 		},
 	}
-}
-
-func (d *repositoryCronJobDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	client, ok := req.ProviderData.(*crowciClient)
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected provider data type",
-			fmt.Sprintf("Expected *crowciClient, got %T", req.ProviderData),
-		)
-		return
-	}
-	d.client = client
 }
 
 func (d *repositoryCronJobDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {

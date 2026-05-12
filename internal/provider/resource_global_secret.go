@@ -25,7 +25,7 @@ func NewGlobalSecretResource() resource.Resource {
 }
 
 type globalSecretResource struct {
-	client *crowciClient
+	resourceWithClient
 }
 
 type globalSecretResourceModel struct {
@@ -96,21 +96,6 @@ func (r *globalSecretResource) Schema(ctx context.Context, req resource.SchemaRe
 			},
 		},
 	}
-}
-
-func (r *globalSecretResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	client, ok := req.ProviderData.(*crowciClient)
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected provider data type",
-			fmt.Sprintf("Expected *crowciClient, got %T", req.ProviderData),
-		)
-		return
-	}
-	r.client = client
 }
 
 func (r *globalSecretResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

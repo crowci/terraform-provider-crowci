@@ -34,7 +34,7 @@ type repositoryRegistryIdentityModel struct {
 }
 
 type repositoryRegistryResource struct {
-	client *crowciClient
+	resourceWithClient
 }
 
 type repositoryRegistryResourceModel struct {
@@ -124,21 +124,6 @@ func (r *repositoryRegistryResource) Schema(_ context.Context, _ resource.Schema
 			},
 		},
 	}
-}
-
-func (r *repositoryRegistryResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	client, ok := req.ProviderData.(*crowciClient)
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected provider data type",
-			fmt.Sprintf("Expected *crowciClient, got %T", req.ProviderData),
-		)
-		return
-	}
-	r.client = client
 }
 
 func (r *repositoryRegistryResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

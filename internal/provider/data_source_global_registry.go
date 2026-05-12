@@ -19,7 +19,7 @@ func NewGlobalRegistryDataSource() datasource.DataSource {
 }
 
 type globalRegistryDataSource struct {
-	client *crowciClient
+	datasourceWithClient
 }
 
 type globalRegistryDataSourceModel struct {
@@ -65,21 +65,6 @@ func (d *globalRegistryDataSource) Schema(_ context.Context, _ datasource.Schema
 			},
 		},
 	}
-}
-
-func (d *globalRegistryDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	client, ok := req.ProviderData.(*crowciClient)
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected provider data type",
-			fmt.Sprintf("Expected *crowciClient, got %T", req.ProviderData),
-		)
-		return
-	}
-	d.client = client
 }
 
 func (d *globalRegistryDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {

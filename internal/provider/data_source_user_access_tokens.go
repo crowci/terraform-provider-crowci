@@ -2,9 +2,7 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -20,7 +18,7 @@ func NewUserAccessTokensDataSource() datasource.DataSource {
 }
 
 type userAccessTokensDataSource struct {
-	client *crowciClient
+	datasourceWithClient
 }
 
 type userAccessTokensDataSourceModel struct {
@@ -102,57 +100,11 @@ func (d *userAccessTokensDataSource) Schema(_ context.Context, _ datasource.Sche
 	}
 }
 
-func (d *userAccessTokensDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	client, ok := req.ProviderData.(*crowciClient)
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected provider data type",
-			fmt.Sprintf("Expected *crowciClient, got %T", req.ProviderData),
-		)
-		return
-	}
-	d.client = client
-}
-
 func (d *userAccessTokensDataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var all []accessTokenAPIResponse
-
-	for page := 1; ; page++ {
-		endpoint := fmt.Sprintf("%s/api/v1/user/access-tokens?page=%d&perPage=50", d.client.Host, page)
-		httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-		if err != nil {
-			resp.Diagnostics.AddError("Failed to build request", err.Error())
-			return
-		}
-
-		httpResp, err := d.client.HTTPClient.Do(httpReq)
-		if err != nil {
-			resp.Diagnostics.AddError("API request failed", err.Error())
-			return
-		}
-		defer httpResp.Body.Close()
-
-		if httpResp.StatusCode != http.StatusOK {
-			resp.Diagnostics.AddError(
-				"Unexpected API response",
-				fmt.Sprintf("GET /user/access-tokens returned status %d", httpResp.StatusCode),
-			)
-			return
-		}
-
-		var pageResults []accessTokenAPIResponse
-		if err := json.NewDecoder(httpResp.Body).Decode(&pageResults); err != nil {
-			resp.Diagnostics.AddError("Failed to decode response", err.Error())
-			return
-		}
-
-		all = append(all, pageResults...)
-		if len(pageResults) < 50 {
-			break
-		}
+	all, err := fetchAllPages[accessTokenAPIResponse](ctx, d.client, fmt.Sprintf("%s/api/v1/user/access-tokens", d.client.Host))
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to fetch access tokens", err.Error())
+		return
 	}
 
 	tokens := make([]userAccessTokenItemModel, len(all))

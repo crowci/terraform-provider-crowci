@@ -19,7 +19,7 @@ func NewGlobalSecretDataSource() datasource.DataSource {
 }
 
 type globalSecretDataSource struct {
-	client *crowciClient
+	datasourceWithClient
 }
 
 type globalSecretDataSourceModel struct {
@@ -84,21 +84,6 @@ func (d *globalSecretDataSource) Schema(ctx context.Context, req datasource.Sche
 			},
 		},
 	}
-}
-
-func (d *globalSecretDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	client, ok := req.ProviderData.(*crowciClient)
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected provider data type",
-			fmt.Sprintf("Expected *crowciClient, got %T", req.ProviderData),
-		)
-		return
-	}
-	d.client = client
 }
 
 func (d *globalSecretDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {

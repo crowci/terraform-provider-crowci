@@ -28,7 +28,7 @@ func NewUserAccessTokenResource() resource.Resource {
 }
 
 type userAccessTokenResource struct {
-	client *crowciClient
+	resourceWithClient
 }
 
 type userAccessTokenResourceModel struct {
@@ -116,21 +116,6 @@ func (r *userAccessTokenResource) Schema(ctx context.Context, req resource.Schem
 			},
 		},
 	}
-}
-
-func (r *userAccessTokenResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	client, ok := req.ProviderData.(*crowciClient)
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected provider data type",
-			fmt.Sprintf("Expected *crowciClient, got %T", req.ProviderData),
-		)
-		return
-	}
-	r.client = client
 }
 
 func (r *userAccessTokenResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

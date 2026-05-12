@@ -29,7 +29,7 @@ func NewRepositorySecretResource() resource.Resource {
 }
 
 type repositorySecretResource struct {
-	client *crowciClient
+	resourceWithClient
 }
 
 type repositorySecretIdentityModel struct {
@@ -127,21 +127,6 @@ func (r *repositorySecretResource) Schema(_ context.Context, _ resource.SchemaRe
 			},
 		},
 	}
-}
-
-func (r *repositorySecretResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	client, ok := req.ProviderData.(*crowciClient)
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected provider data type",
-			fmt.Sprintf("Expected *crowciClient, got %T", req.ProviderData),
-		)
-		return
-	}
-	r.client = client
 }
 
 func (r *repositorySecretResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

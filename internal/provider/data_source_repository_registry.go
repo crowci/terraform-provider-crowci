@@ -19,7 +19,7 @@ func NewRepositoryRegistryDataSource() datasource.DataSource {
 }
 
 type repositoryRegistryDataSource struct {
-	client *crowciClient
+	datasourceWithClient
 }
 
 type repositoryRegistryDataSourceModel struct {
@@ -70,21 +70,6 @@ func (d *repositoryRegistryDataSource) Schema(_ context.Context, _ datasource.Sc
 			},
 		},
 	}
-}
-
-func (d *repositoryRegistryDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	client, ok := req.ProviderData.(*crowciClient)
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected provider data type",
-			fmt.Sprintf("Expected *crowciClient, got %T", req.ProviderData),
-		)
-		return
-	}
-	d.client = client
 }
 
 func (d *repositoryRegistryDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {

@@ -38,7 +38,7 @@ func NewUserRepositoriesActiveDataSource() datasource.DataSource {
 }
 
 type userRepositoriesActiveDataSource struct {
-	client *crowciClient
+	datasourceWithClient
 }
 
 type userRepositoriesActiveDataSourceModel struct {
@@ -344,21 +344,6 @@ func (d *userRepositoriesActiveDataSource) Schema(_ context.Context, _ datasourc
 			},
 		},
 	}
-}
-
-func (d *userRepositoriesActiveDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	client, ok := req.ProviderData.(*crowciClient)
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected provider data type",
-			fmt.Sprintf("Expected *crowciClient, got %T", req.ProviderData),
-		)
-		return
-	}
-	d.client = client
 }
 
 func (d *userRepositoriesActiveDataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {

@@ -19,7 +19,7 @@ func NewOrganizationDataSource() datasource.DataSource {
 }
 
 type organizationDataSource struct {
-	client *crowciClient
+	datasourceWithClient
 }
 
 type organizationDataSourceModel struct {
@@ -62,21 +62,6 @@ func (d *organizationDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 			},
 		},
 	}
-}
-
-func (d *organizationDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	client, ok := req.ProviderData.(*crowciClient)
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected provider data type",
-			fmt.Sprintf("Expected *crowciClient, got %T", req.ProviderData),
-		)
-		return
-	}
-	d.client = client
 }
 
 func (d *organizationDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {

@@ -49,7 +49,7 @@ func (r *organizationRegistryResource) IdentitySchema(_ context.Context, _ resou
 }
 
 type organizationRegistryResource struct {
-	client *crowciClient
+	resourceWithClient
 }
 
 type organizationRegistryResourceModel struct {
@@ -136,21 +136,6 @@ func (r *organizationRegistryResource) Schema(_ context.Context, _ resource.Sche
 			},
 		},
 	}
-}
-
-func (r *organizationRegistryResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	client, ok := req.ProviderData.(*crowciClient)
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected provider data type",
-			fmt.Sprintf("Expected *crowciClient, got %T", req.ProviderData),
-		)
-		return
-	}
-	r.client = client
 }
 
 func (r *organizationRegistryResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
