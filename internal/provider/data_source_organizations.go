@@ -36,32 +36,13 @@ func (d *organizationsDataSource) Metadata(_ context.Context, req datasource.Met
 }
 
 func (d *organizationsDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
-	orgAttrs := map[string]schema.Attribute{
-		"id": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Organization ID.",
-		},
-		"forge_id": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Forge ID the organization belongs to.",
-		},
-		"name": schema.StringAttribute{
-			Computed:    true,
-			Description: "Organization name.",
-		},
-		"is_user": schema.BoolAttribute{
-			Computed:    true,
-			Description: "Whether this organization represents a user account.",
-		},
-	}
-
 	resp.Schema = schema.Schema{
 		Description: "Fetches all organizations accessible to the authenticated user.",
 		Attributes: map[string]schema.Attribute{
 			"organizations": schema.ListNestedAttribute{
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: orgAttrs,
+					Attributes: organizationSchemaAttrs(),
 				},
 			},
 		},

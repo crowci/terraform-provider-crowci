@@ -32,6 +32,6 @@ data "crowci_repository_secret" "example" {
 - `created_at` (Number) Creation time as a Unix timestamp.
 - `events` (List of String) Events that trigger the secret.
 - `id` (Number) Secret ID.
-- `images` (List of String) Images the secret is available to.
+- `images` (List of String) Container images the secret is available to.
 - `source` (String) Source of the secret.
 - `updated_at` (Number) Last update time as a Unix timestamp.

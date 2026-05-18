@@ -43,57 +43,13 @@ func (d *userAccessTokensDataSource) Metadata(_ context.Context, req datasource.
 }
 
 func (d *userAccessTokensDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
-	tokenAttrs := map[string]schema.Attribute{
-		"id": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Token ID.",
-		},
-		"name": schema.StringAttribute{
-			Computed:    true,
-			Description: "Token name.",
-		},
-		"scopes": schema.ListAttribute{
-			Computed:    true,
-			ElementType: types.StringType,
-			Description: "Token scopes.",
-		},
-		"user_id": schema.Int64Attribute{
-			Computed:    true,
-			Description: "ID of the user who owns this token.",
-		},
-		"org_id": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Org scope of the token.",
-		},
-		"repo_id": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Repo scope of the token.",
-		},
-		"expires_at": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Expiry as a Unix timestamp.",
-		},
-		"last_used": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Last use time as a Unix timestamp.",
-		},
-		"created_at": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Creation time as a Unix timestamp.",
-		},
-		"updated_at": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Last update time as a Unix timestamp.",
-		},
-	}
-
 	resp.Schema = schema.Schema{
 		Description: "Fetches all access tokens for the currently authenticated user.",
 		Attributes: map[string]schema.Attribute{
 			"tokens": schema.ListNestedAttribute{
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: tokenAttrs,
+					Attributes: userAccessTokenSchemaAttrs(),
 				},
 			},
 		},

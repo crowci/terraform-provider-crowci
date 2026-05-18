@@ -31,43 +31,56 @@ type organizationRegistryDataSourceModel struct {
 	UpdatedAt types.Int64  `tfsdk:"updated_at"`
 }
 
+func organizationRegistrySchemaAttrs() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+		"id": schema.Int64Attribute{
+			Computed:    true,
+			Description: "Registry ID.",
+		},
+		"address": schema.StringAttribute{
+			Computed:    true,
+			Description: "Registry address.",
+		},
+		"username": schema.StringAttribute{
+			Computed:    true,
+			Description: "Registry username.",
+		},
+		"readonly": schema.BoolAttribute{
+			Computed:    true,
+			Description: "Whether the registry is read-only.",
+		},
+		"created_at": schema.Int64Attribute{
+			Computed:    true,
+			Description: "Creation time as a Unix timestamp.",
+		},
+		"updated_at": schema.Int64Attribute{
+			Computed:    true,
+			Description: "Last update time as a Unix timestamp.",
+		},
+	}
+}
+
 func (d *organizationRegistryDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_organization_registry"
 }
 
 func (d *organizationRegistryDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	attrs := organizationRegistrySchemaAttrs()
+	attrs["org_id"] = schema.Int64Attribute{
+		Required:    true,
+		Description: "ID of the organization this registry belongs to.",
+	}
+	attrs["address"] = schema.StringAttribute{
+		Required:    true,
+		Description: "Registry address (e.g. 'docker.io', 'ghcr.io').",
+	}
+	attrs["id"] = schema.Int64Attribute{
+		Computed:    true,
+		Description: "Registry ID assigned by Crow CI.",
+	}
 	resp.Schema = schema.Schema{
 		Description: "Get a container registry credential for an organization by org ID and registry address.",
-		Attributes: map[string]schema.Attribute{
-			"org_id": schema.Int64Attribute{
-				Required:    true,
-				Description: "ID of the organization this registry belongs to.",
-			},
-			"address": schema.StringAttribute{
-				Required:    true,
-				Description: "Registry address (e.g. 'docker.io', 'ghcr.io').",
-			},
-			"id": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Registry ID assigned by Crow CI.",
-			},
-			"username": schema.StringAttribute{
-				Computed:    true,
-				Description: "Registry username.",
-			},
-			"readonly": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether the registry is read-only.",
-			},
-			"created_at": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Creation time as a Unix timestamp.",
-			},
-			"updated_at": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Last update time as a Unix timestamp.",
-			},
-		},
+		Attributes:  attrs,
 	}
 }
 

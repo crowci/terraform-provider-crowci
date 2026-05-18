@@ -43,49 +43,6 @@ func (d *repositoryCronJobsDataSource) Metadata(_ context.Context, req datasourc
 }
 
 func (d *repositoryCronJobsDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
-	cronJobAttrs := map[string]schema.Attribute{
-		"id": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Cron job ID.",
-		},
-		"name": schema.StringAttribute{
-			Computed:    true,
-			Description: "Cron job name.",
-		},
-		"schedule": schema.StringAttribute{
-			Computed:    true,
-			Description: "Cron schedule expression.",
-		},
-		"branch": schema.StringAttribute{
-			Computed:    true,
-			Description: "Branch the cron job runs on.",
-		},
-		"creator_id": schema.Int64Attribute{
-			Computed:    true,
-			Description: "ID of the user who created this cron job.",
-		},
-		"next_exec": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Next scheduled execution time as a Unix timestamp.",
-		},
-		"created": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Creation time as a Unix timestamp.",
-		},
-		"fail_count": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Number of consecutive failures.",
-		},
-		"fail_msg": schema.StringAttribute{
-			Computed:    true,
-			Description: "Last failure message.",
-		},
-		"disabled": schema.BoolAttribute{
-			Computed:    true,
-			Description: "Whether the cron job is disabled.",
-		},
-	}
-
 	resp.Schema = schema.Schema{
 		Description: "Fetches all cron jobs for a specific repository on the Crow CI server.",
 		Attributes: map[string]schema.Attribute{
@@ -96,7 +53,7 @@ func (d *repositoryCronJobsDataSource) Schema(_ context.Context, _ datasource.Sc
 			"cron_jobs": schema.ListNestedAttribute{
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: cronJobAttrs,
+					Attributes: repositoryCronJobSchemaAttrs(),
 				},
 			},
 		},

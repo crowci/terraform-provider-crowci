@@ -36,60 +36,65 @@ type userAccessTokenDataSourceModel struct {
 	UpdatedAt types.Int64  `tfsdk:"updated_at"`
 }
 
+func userAccessTokenSchemaAttrs() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+		"id": schema.Int64Attribute{
+			Computed:    true,
+			Description: "Token ID.",
+		},
+		"name": schema.StringAttribute{
+			Computed:    true,
+			Description: "Token name.",
+		},
+		"scopes": schema.ListAttribute{
+			Computed:    true,
+			ElementType: types.StringType,
+			Description: "Token scopes.",
+		},
+		"user_id": schema.Int64Attribute{
+			Computed:    true,
+			Description: "ID of the user who owns this token.",
+		},
+		"org_id": schema.Int64Attribute{
+			Computed:    true,
+			Description: "Org scope of the token.",
+		},
+		"repo_id": schema.Int64Attribute{
+			Computed:    true,
+			Description: "Repo scope of the token.",
+		},
+		"expires_at": schema.Int64Attribute{
+			Computed:    true,
+			Description: "Expiry as a Unix timestamp.",
+		},
+		"last_used": schema.Int64Attribute{
+			Computed:    true,
+			Description: "Last use time as a Unix timestamp.",
+		},
+		"created_at": schema.Int64Attribute{
+			Computed:    true,
+			Description: "Creation time as a Unix timestamp.",
+		},
+		"updated_at": schema.Int64Attribute{
+			Computed:    true,
+			Description: "Last update time as a Unix timestamp.",
+		},
+	}
+}
+
 func (d *userAccessTokenDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_user_access_token"
 }
 
 func (d *userAccessTokenDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	attrs := userAccessTokenSchemaAttrs()
+	attrs["token_id"] = schema.Int64Attribute{
+		Required:    true,
+		Description: "The token's id.",
+	}
 	resp.Schema = schema.Schema{
 		Description: "Get an access token.",
-		Attributes: map[string]schema.Attribute{
-			"token_id": schema.Int64Attribute{
-				Required:    true,
-				Description: "The token's id.",
-			},
-			"id": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Token ID.",
-			},
-			"name": schema.StringAttribute{
-				Computed:    true,
-				Description: "Token name.",
-			},
-			"scopes": schema.ListAttribute{
-				Computed:    true,
-				ElementType: types.StringType,
-				Description: "Token scopes.",
-			},
-			"user_id": schema.Int64Attribute{
-				Computed:    true,
-				Description: "ID of the user who owns this token.",
-			},
-			"org_id": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Org scope of the token.",
-			},
-			"repo_id": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Repo scope of the token.",
-			},
-			"expires_at": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Expiry as a Unix timestamp.",
-			},
-			"last_used": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Last use time as a Unix timestamp.",
-			},
-			"created_at": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Creation time as a Unix timestamp.",
-			},
-			"updated_at": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Last update time as a Unix timestamp.",
-			},
-		},
+		Attributes:  attrs,
 	}
 }
 

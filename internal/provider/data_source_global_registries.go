@@ -38,40 +38,13 @@ func (d *globalRegistriesDataSource) Metadata(_ context.Context, req datasource.
 }
 
 func (d *globalRegistriesDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
-	registryAttrs := map[string]schema.Attribute{
-		"id": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Registry ID.",
-		},
-		"address": schema.StringAttribute{
-			Computed:    true,
-			Description: "Registry address.",
-		},
-		"username": schema.StringAttribute{
-			Computed:    true,
-			Description: "Registry username.",
-		},
-		"readonly": schema.BoolAttribute{
-			Computed:    true,
-			Description: "Whether the registry is read-only.",
-		},
-		"created_at": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Creation time as a Unix timestamp.",
-		},
-		"updated_at": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Last update time as a Unix timestamp.",
-		},
-	}
-
 	resp.Schema = schema.Schema{
 		Description: "Fetches all global container registry credentials on the Crow CI server.",
 		Attributes: map[string]schema.Attribute{
 			"registries": schema.ListNestedAttribute{
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: registryAttrs,
+					Attributes: globalRegistrySchemaAttrs(),
 				},
 			},
 		},

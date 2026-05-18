@@ -35,31 +35,40 @@ type organizationAPIResponse struct {
 	IsUser  bool   `json:"is_user"`
 }
 
+func organizationSchemaAttrs() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+		"id": schema.Int64Attribute{
+			Computed:    true,
+			Description: "Organization ID.",
+		},
+		"forge_id": schema.Int64Attribute{
+			Computed:    true,
+			Description: "Forge ID the organization belongs to.",
+		},
+		"name": schema.StringAttribute{
+			Computed:    true,
+			Description: "Organization name.",
+		},
+		"is_user": schema.BoolAttribute{
+			Computed:    true,
+			Description: "Whether this organization represents a user account.",
+		},
+	}
+}
+
 func (d *organizationDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_organization"
 }
 
 func (d *organizationDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	attrs := organizationSchemaAttrs()
+	attrs["id"] = schema.Int64Attribute{
+		Required:    true,
+		Description: "The organization's ID.",
+	}
 	resp.Schema = schema.Schema{
 		Description: "Get an organization by ID. The resource will still return an organization even if it does not exists, but it will return with id = 0",
-		Attributes: map[string]schema.Attribute{
-			"id": schema.Int64Attribute{
-				Required:    true,
-				Description: "The organization's ID.",
-			},
-			"forge_id": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Forge ID the organization belongs to.",
-			},
-			"name": schema.StringAttribute{
-				Computed:    true,
-				Description: "Organization name.",
-			},
-			"is_user": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether this organization represents a user account.",
-			},
-		},
+		Attributes:  attrs,
 	}
 }
 

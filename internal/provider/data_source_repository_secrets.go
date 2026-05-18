@@ -40,39 +40,6 @@ func (d *repositorySecretsDataSource) Metadata(_ context.Context, req datasource
 }
 
 func (d *repositorySecretsDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
-	secretAttrs := map[string]schema.Attribute{
-		"id": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Secret ID.",
-		},
-		"name": schema.StringAttribute{
-			Computed:    true,
-			Description: "Secret name.",
-		},
-		"events": schema.ListAttribute{
-			Computed:    true,
-			ElementType: types.StringType,
-			Description: "Events that trigger the secret.",
-		},
-		"images": schema.ListAttribute{
-			Computed:    true,
-			ElementType: types.StringType,
-			Description: "Container images the secret is available to.",
-		},
-		"source": schema.StringAttribute{
-			Computed:    true,
-			Description: "Source of the secret.",
-		},
-		"created_at": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Creation time as a Unix timestamp.",
-		},
-		"updated_at": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Last update time as a Unix timestamp.",
-		},
-	}
-
 	resp.Schema = schema.Schema{
 		Description: "Fetches all secrets for a specific repository on the Crow CI server.",
 		Attributes: map[string]schema.Attribute{
@@ -83,7 +50,7 @@ func (d *repositorySecretsDataSource) Schema(_ context.Context, _ datasource.Sch
 			"secrets": schema.ListNestedAttribute{
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: secretAttrs,
+					Attributes: repositorySecretSchemaAttrs(),
 				},
 			},
 		},

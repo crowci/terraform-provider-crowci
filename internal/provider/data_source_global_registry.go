@@ -30,39 +30,52 @@ type globalRegistryDataSourceModel struct {
 	UpdatedAt types.Int64  `tfsdk:"updated_at"`
 }
 
+func globalRegistrySchemaAttrs() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+		"id": schema.Int64Attribute{
+			Computed:    true,
+			Description: "Registry ID.",
+		},
+		"address": schema.StringAttribute{
+			Computed:    true,
+			Description: "Registry address.",
+		},
+		"username": schema.StringAttribute{
+			Computed:    true,
+			Description: "Registry username.",
+		},
+		"readonly": schema.BoolAttribute{
+			Computed:    true,
+			Description: "Whether the registry is read-only.",
+		},
+		"created_at": schema.Int64Attribute{
+			Computed:    true,
+			Description: "Creation time as a Unix timestamp.",
+		},
+		"updated_at": schema.Int64Attribute{
+			Computed:    true,
+			Description: "Last update time as a Unix timestamp.",
+		},
+	}
+}
+
 func (d *globalRegistryDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_global_registry"
 }
 
 func (d *globalRegistryDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	attrs := globalRegistrySchemaAttrs()
+	attrs["address"] = schema.StringAttribute{
+		Required:    true,
+		Description: "Registry address (e.g. 'docker.io', 'ghcr.io').",
+	}
+	attrs["id"] = schema.Int64Attribute{
+		Computed:    true,
+		Description: "Registry ID assigned by Crow CI.",
+	}
 	resp.Schema = schema.Schema{
 		Description: "Get a global container registry credential by address.",
-		Attributes: map[string]schema.Attribute{
-			"address": schema.StringAttribute{
-				Required:    true,
-				Description: "Registry address (e.g. 'docker.io', 'ghcr.io').",
-			},
-			"id": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Registry ID assigned by Crow CI.",
-			},
-			"username": schema.StringAttribute{
-				Computed:    true,
-				Description: "Registry username.",
-			},
-			"readonly": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether the registry is read-only.",
-			},
-			"created_at": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Creation time as a Unix timestamp.",
-			},
-			"updated_at": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Last update time as a Unix timestamp.",
-			},
-		},
+		Attributes:  attrs,
 	}
 }
 

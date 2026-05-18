@@ -32,49 +32,58 @@ type organizationSecretDataSourceModel struct {
 	UpdatedAt types.Int64  `tfsdk:"updated_at"`
 }
 
+func organizationSecretSchemaAttrs() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+		"id": schema.Int64Attribute{
+			Computed:    true,
+			Description: "Secret ID.",
+		},
+		"name": schema.StringAttribute{
+			Computed:    true,
+			Description: "Secret name.",
+		},
+		"events": schema.ListAttribute{
+			Computed:    true,
+			ElementType: types.StringType,
+			Description: "Events that trigger the secret.",
+		},
+		"images": schema.ListAttribute{
+			Computed:    true,
+			ElementType: types.StringType,
+			Description: "Container images the secret is available to.",
+		},
+		"source": schema.StringAttribute{
+			Computed:    true,
+			Description: "Source of the secret.",
+		},
+		"created_at": schema.Int64Attribute{
+			Computed:    true,
+			Description: "Creation time as a Unix timestamp.",
+		},
+		"updated_at": schema.Int64Attribute{
+			Computed:    true,
+			Description: "Last update time as a Unix timestamp.",
+		},
+	}
+}
+
 func (d *organizationSecretDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_organization_secret"
 }
 
 func (d *organizationSecretDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	attrs := organizationSecretSchemaAttrs()
+	attrs["org_id"] = schema.Int64Attribute{
+		Required:    true,
+		Description: "ID of the organization the secret belongs to.",
+	}
+	attrs["name"] = schema.StringAttribute{
+		Required:    true,
+		Description: "The secret's name.",
+	}
 	resp.Schema = schema.Schema{
 		Description: "Get a secret scoped to a specific organization by name.",
-		Attributes: map[string]schema.Attribute{
-			"org_id": schema.Int64Attribute{
-				Required:    true,
-				Description: "ID of the organization the secret belongs to.",
-			},
-			"name": schema.StringAttribute{
-				Required:    true,
-				Description: "The secret's name.",
-			},
-			"id": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Secret ID.",
-			},
-			"events": schema.ListAttribute{
-				Computed:    true,
-				ElementType: types.StringType,
-				Description: "Events that trigger the secret.",
-			},
-			"images": schema.ListAttribute{
-				Computed:    true,
-				ElementType: types.StringType,
-				Description: "Images the secret is available to.",
-			},
-			"source": schema.StringAttribute{
-				Computed:    true,
-				Description: "Source of the secret.",
-			},
-			"created_at": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Creation time as a Unix timestamp.",
-			},
-			"updated_at": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Last update time as a Unix timestamp.",
-			},
-		},
+		Attributes:  attrs,
 	}
 }
 
