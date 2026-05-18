@@ -131,204 +131,26 @@ func (d *userRepositoriesActiveDataSource) Metadata(_ context.Context, req datas
 }
 
 func (d *userRepositoriesActiveDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
-	trustedAttrs := map[string]schema.Attribute{
-		"network": schema.BoolAttribute{
-			Computed:    true,
-			Description: "Allow network access for trusted operations.",
-		},
-		"security": schema.BoolAttribute{
-			Computed:    true,
-			Description: "Allow security-sensitive operations.",
-		},
-		"volumes": schema.BoolAttribute{
-			Computed:    true,
-			Description: "Allow volume mounts.",
-		},
-	}
-
-	lastPipelineAttrs := map[string]schema.Attribute{
-		"id": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Pipeline ID.",
-		},
-		"number": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Pipeline number within the repository.",
-		},
-		"status": schema.StringAttribute{
-			Computed:    true,
-			Description: "Pipeline status.",
-		},
-		"event": schema.StringAttribute{
-			Computed:    true,
-			Description: "Event that triggered the pipeline.",
-		},
-		"branch": schema.StringAttribute{
-			Computed:    true,
-			Description: "Branch the pipeline ran on.",
-		},
-		"commit": schema.StringAttribute{
-			Computed:    true,
-			Description: "Commit SHA.",
-		},
-		"ref": schema.StringAttribute{
-			Computed:    true,
-			Description: "Git ref.",
-		},
-		"message": schema.StringAttribute{
-			Computed:    true,
-			Description: "Commit message.",
-		},
-		"author": schema.StringAttribute{
-			Computed:    true,
-			Description: "Commit author name.",
-		},
-		"author_email": schema.StringAttribute{
-			Computed:    true,
-			Description: "Commit author email.",
-		},
-		"sender": schema.StringAttribute{
-			Computed:    true,
-			Description: "User who triggered the pipeline.",
-		},
-		"forge_url": schema.StringAttribute{
-			Computed:    true,
-			Description: "URL to the pipeline at the forge.",
-		},
-		"created": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Pipeline creation time as a Unix timestamp.",
-		},
-		"started": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Pipeline start time as a Unix timestamp.",
-		},
-		"finished": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Pipeline finish time as a Unix timestamp.",
-		},
-	}
-
-	repoAttrs := map[string]schema.Attribute{
-		"id": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Repository ID.",
-		},
-		"forge_remote_id": schema.StringAttribute{
-			Computed:    true,
-			Description: "Repository ID at the forge.",
-		},
-		"forge_id": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Forge ID.",
-		},
-		"org_id": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Organization ID the repository belongs to.",
-		},
-		"owner": schema.StringAttribute{
-			Computed:    true,
-			Description: "Repository owner.",
-		},
-		"name": schema.StringAttribute{
-			Computed:    true,
-			Description: "Repository name.",
-		},
-		"full_name": schema.StringAttribute{
-			Computed:    true,
-			Description: "Full repository name (owner/name).",
-		},
-		"clone_url": schema.StringAttribute{
-			Computed:    true,
-			Description: "HTTPS clone URL.",
-		},
-		"clone_url_ssh": schema.StringAttribute{
-			Computed:    true,
-			Description: "SSH clone URL.",
-		},
-		"forge_url": schema.StringAttribute{
-			Computed:    true,
-			Description: "URL of the repository at the forge.",
-		},
-		"avatar_url": schema.StringAttribute{
-			Computed:    true,
-			Description: "Avatar URL for the repository.",
-		},
-		"default_branch": schema.StringAttribute{
-			Computed:    true,
-			Description: "Default branch of the repository.",
-		},
-		"active": schema.BoolAttribute{
-			Computed:    true,
-			Description: "Whether the repository is active.",
-		},
-		"private": schema.BoolAttribute{
-			Computed:    true,
-			Description: "Whether the repository is private.",
-		},
-		"pr_enabled": schema.BoolAttribute{
-			Computed:    true,
-			Description: "Whether pull request pipelines are enabled.",
-		},
-		"allow_deploy": schema.BoolAttribute{
-			Computed:    true,
-			Description: "Allow deploy pipelines.",
-		},
-		"allow_manual": schema.BoolAttribute{
-			Computed:    true,
-			Description: "Allow manual pipeline triggers.",
-		},
-		"allow_pr": schema.BoolAttribute{
-			Computed:    true,
-			Description: "Allow pull request pipelines.",
-		},
-		"visibility": schema.StringAttribute{
-			Computed:    true,
-			Description: "Repository visibility.",
-		},
-		"require_approval": schema.StringAttribute{
-			Computed:    true,
-			Description: "Approval requirement for pipelines.",
-		},
-		"trusted": schema.SingleNestedAttribute{
-			Computed:    true,
-			Description: "Trusted configuration for the repository.",
-			Attributes:  trustedAttrs,
-		},
-		"config_file": schema.StringAttribute{
-			Computed:    true,
-			Description: "Path to the pipeline configuration file.",
-		},
-		"deploy_team": schema.StringAttribute{
-			Computed:    true,
-			Description: "Team allowed to trigger deploy pipelines.",
-		},
-		"timeout": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Pipeline execution timeout in minutes.",
-		},
-		"cancel_previous_pipeline_events": schema.ListAttribute{
-			Computed:    true,
-			ElementType: types.StringType,
-			Description: "Pipeline events for which previous runs should be cancelled.",
-		},
-		"netrc_trusted": schema.ListAttribute{
-			Computed:    true,
-			ElementType: types.StringType,
-			Description: "Hostnames for which .netrc credentials are trusted.",
-		},
-		"logs_keep_duration": schema.StringAttribute{
-			Computed:    true,
-			Description: "Duration to keep pipeline logs.",
-		},
-		"logs_keep_min": schema.Int64Attribute{
-			Computed:    true,
-			Description: "Minimum number of pipeline logs to keep.",
-		},
-		"last_pipeline": schema.SingleNestedAttribute{
-			Computed:    true,
-			Description: "Last pipeline run for the repository. Null if no pipeline has run yet.",
-			Attributes:  lastPipelineAttrs,
+	repoAttrs := repositorySchemaAttrs()
+	repoAttrs["last_pipeline"] = schema.SingleNestedAttribute{
+		Computed:    true,
+		Description: "Last pipeline run for the repository. Null if no pipeline has run yet.",
+		Attributes: map[string]schema.Attribute{
+			"id":           schema.Int64Attribute{Computed: true, Description: "Pipeline ID."},
+			"number":       schema.Int64Attribute{Computed: true, Description: "Pipeline number within the repository."},
+			"status":       schema.StringAttribute{Computed: true, Description: "Pipeline status."},
+			"event":        schema.StringAttribute{Computed: true, Description: "Event that triggered the pipeline."},
+			"branch":       schema.StringAttribute{Computed: true, Description: "Branch the pipeline ran on."},
+			"commit":       schema.StringAttribute{Computed: true, Description: "Commit SHA."},
+			"ref":          schema.StringAttribute{Computed: true, Description: "Git ref."},
+			"message":      schema.StringAttribute{Computed: true, Description: "Commit message."},
+			"author":       schema.StringAttribute{Computed: true, Description: "Commit author name."},
+			"author_email": schema.StringAttribute{Computed: true, Description: "Commit author email."},
+			"sender":       schema.StringAttribute{Computed: true, Description: "User who triggered the pipeline."},
+			"forge_url":    schema.StringAttribute{Computed: true, Description: "URL to the pipeline at the forge."},
+			"created":      schema.Int64Attribute{Computed: true, Description: "Pipeline creation time as a Unix timestamp."},
+			"started":      schema.Int64Attribute{Computed: true, Description: "Pipeline start time as a Unix timestamp."},
+			"finished":     schema.Int64Attribute{Computed: true, Description: "Pipeline finish time as a Unix timestamp."},
 		},
 	}
 

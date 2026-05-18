@@ -44,7 +44,7 @@ data "crowci_user_repositories_available" "forge" {
 
 Read-Only:
 
-- `active` (Boolean) Whether the repository is already active in Crow CI.
+- `active` (Boolean) Whether the repository is active.
 - `allow_deploy` (Boolean) Allow deploy pipelines.
 - `allow_manual` (Boolean) Allow manual pipeline triggers.
 - `allow_pr` (Boolean) Allow pull request pipelines.
@@ -56,7 +56,7 @@ Read-Only:
 - `default_branch` (String) Default branch of the repository.
 - `deploy_team` (String) Team allowed to trigger deploy pipelines.
 - `forge_id` (Number) Forge ID.
-- `forge_remote_id` (String) Repository ID at the forge.
+- `forge_remote_id` (String) The ID of the repository at the forge.
 - `forge_url` (String) URL of the repository at the forge.
 - `full_name` (String) Full repository name (owner/name).
 - `id` (Number) Repository ID.
