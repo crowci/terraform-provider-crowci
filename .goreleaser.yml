@@ -50,7 +50,7 @@ signs:
       - "--batch"
       - "--pinentry-mode=loopback"
       - "--passphrase"
-      - "{{ .Env.PASSPHRASE }}"
+      - "{{ .Env.GPG_PASSPHRASE }}"
       - "--local-user"
       - "{{ .Env.GPG_FINGERPRINT }}" # set this environment variable for your signing key
       - "--output"
