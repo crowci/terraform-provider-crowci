@@ -1,13 +1,18 @@
 package provider
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // datasourceWithClient is embedded in data sources to provide the Configure method.
@@ -48,6 +53,95 @@ func (r *resourceWithClient) Configure(_ context.Context, req resource.Configure
 		return
 	}
 	r.client = client
+}
+
+func stringsToList(ss []string) types.List {
+	if ss == nil {
+		ss = []string{}
+	}
+	elems := make([]attr.Value, len(ss))
+	for i, s := range ss {
+		elems[i] = types.StringValue(s)
+	}
+	list, _ := types.ListValue(types.StringType, elems)
+	return list
+}
+
+func int64NullIfZero(v int64) types.Int64 {
+	if v == 0 {
+		return types.Int64Null()
+	}
+	return types.Int64Value(v)
+}
+
+// doRequest builds and executes an HTTP request. It sets Content-Type: application/json when body
+// is non-nil. If the response status is not in allowedStatuses, it adds a diagnostic error and
+// returns (nil, false). Callers must close the returned response body.
+func doRequest(
+	ctx context.Context,
+	client *crowciClient,
+	method, endpoint string,
+	body []byte,
+	allowedStatuses []int,
+	diags *diag.Diagnostics,
+) (*http.Response, bool) {
+	var reqBody io.Reader
+	if body != nil {
+		reqBody = bytes.NewReader(body)
+	}
+	httpReq, err := http.NewRequestWithContext(ctx, method, endpoint, reqBody)
+	if err != nil {
+		diags.AddError("Failed to build request", err.Error())
+		return nil, false
+	}
+	if body != nil {
+		httpReq.Header.Set("Content-Type", "application/json")
+	}
+	httpResp, err := client.HTTPClient.Do(httpReq)
+	if err != nil {
+		diags.AddError("API request failed", err.Error())
+		return nil, false
+	}
+	for _, s := range allowedStatuses {
+		if httpResp.StatusCode == s {
+			return httpResp, true
+		}
+	}
+	b, _ := io.ReadAll(httpResp.Body)
+	httpResp.Body.Close()
+	diags.AddError(
+		"Unexpected API response",
+		fmt.Sprintf("%s %s returned status %d: %s", method, endpoint, httpResp.StatusCode, b),
+	)
+	return nil, false
+}
+
+// decodeJSON decodes JSON from r into dest. Adds a diagnostic error and returns false on failure.
+func decodeJSON[T any](r io.Reader, dest *T, diags *diag.Diagnostics) bool {
+	if err := json.NewDecoder(r).Decode(dest); err != nil {
+		diags.AddError("Failed to decode response", err.Error())
+		return false
+	}
+	return true
+}
+
+// marshalJSON encodes src to JSON. Returns nil and adds a diagnostic error on failure.
+func marshalJSON(src any, diags *diag.Diagnostics) []byte {
+	b, err := json.Marshal(src)
+	if err != nil {
+		diags.AddError("Failed to encode request", err.Error())
+		return nil
+	}
+	return b
+}
+
+func listToStrings(list types.List) []string {
+	elems := list.Elements()
+	out := make([]string, len(elems))
+	for i, e := range elems {
+		out[i] = e.(types.String).ValueString()
+	}
+	return out
 }
 
 // fetchAllPages retrieves all pages from a paginated API endpoint.

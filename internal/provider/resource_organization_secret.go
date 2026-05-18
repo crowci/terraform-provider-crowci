@@ -1,11 +1,8 @@
 package provider
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 
@@ -144,45 +141,20 @@ func (r *organizationSecretResource) Create(ctx context.Context, req resource.Cr
 	}{
 		Name:   data.Name.ValueString(),
 		Value:  data.Value.ValueString(),
-		Events: listToStrings(ctx, data.Events),
-		Images: listToStrings(ctx, data.Images),
+		Events: listToStrings(data.Events),
+		Images: listToStrings(data.Images),
 	}
 
-	bodyJSON, err := json.Marshal(body)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to encode request", err.Error())
-		return
-	}
+	bodyJSON := marshalJSON(body, &resp.Diagnostics)
+	if bodyJSON == nil { return }
 
 	endpoint := fmt.Sprintf("%s/api/v1/orgs/%d/secrets", r.client.Host, data.OrgID.ValueInt64())
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(bodyJSON))
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to build request", err.Error())
-		return
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	httpResp, err := r.client.HTTPClient.Do(httpReq)
-	if err != nil {
-		resp.Diagnostics.AddError("API request failed", err.Error())
-		return
-	}
+	httpResp, ok := doRequest(ctx, r.client, http.MethodPost, endpoint, bodyJSON, []int{http.StatusOK}, &resp.Diagnostics)
+	if !ok { return }
 	defer httpResp.Body.Close()
 
-	if httpResp.StatusCode != http.StatusOK {
-		b, _ := io.ReadAll(httpResp.Body)
-		resp.Diagnostics.AddError(
-			"Unexpected API response",
-			fmt.Sprintf("POST /orgs/%d/secrets returned status %d: %s", data.OrgID.ValueInt64(), httpResp.StatusCode, b),
-		)
-		return
-	}
-
 	var result globalSecretAPIResponse
-	if err := json.NewDecoder(httpResp.Body).Decode(&result); err != nil {
-		resp.Diagnostics.AddError("Failed to decode response", err.Error())
-		return
-	}
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
 
 	value := data.Value
 	mapOrgSecretToState(&result, &data)
@@ -200,36 +172,17 @@ func (r *organizationSecretResource) Read(ctx context.Context, req resource.Read
 	}
 
 	endpoint := fmt.Sprintf("%s/api/v1/orgs/%d/secrets/%s", r.client.Host, data.OrgID.ValueInt64(), data.Name.ValueString())
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to build request", err.Error())
-		return
-	}
-
-	httpResp, err := r.client.HTTPClient.Do(httpReq)
-	if err != nil {
-		resp.Diagnostics.AddError("API request failed", err.Error())
-		return
-	}
+	httpResp, ok := doRequest(ctx, r.client, http.MethodGet, endpoint, nil, []int{http.StatusOK, http.StatusNotFound}, &resp.Diagnostics)
+	if !ok { return }
 	defer httpResp.Body.Close()
 
 	if httpResp.StatusCode == http.StatusNotFound {
 		resp.State.RemoveResource(ctx)
 		return
 	}
-	if httpResp.StatusCode != http.StatusOK {
-		resp.Diagnostics.AddError(
-			"Unexpected API response",
-			fmt.Sprintf("GET /orgs/%d/secrets/%s returned status %d", data.OrgID.ValueInt64(), data.Name.ValueString(), httpResp.StatusCode),
-		)
-		return
-	}
 
 	var result globalSecretAPIResponse
-	if err := json.NewDecoder(httpResp.Body).Decode(&result); err != nil {
-		resp.Diagnostics.AddError("Failed to decode response", err.Error())
-		return
-	}
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
 
 	// value is not returned by the API — preserve from prior state.
 	value := data.Value
@@ -260,44 +213,20 @@ func (r *organizationSecretResource) Update(ctx context.Context, req resource.Up
 		Images []string `json:"images,omitempty"`
 	}{
 		Value:  plan.Value.ValueString(),
-		Events: listToStrings(ctx, plan.Events),
-		Images: listToStrings(ctx, plan.Images),
+		Events: listToStrings(plan.Events),
+		Images: listToStrings(plan.Images),
 	}
 
-	bodyJSON, err := json.Marshal(body)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to encode request", err.Error())
-		return
-	}
+	bodyJSON := marshalJSON(body, &resp.Diagnostics)
+	if bodyJSON == nil { return }
 
 	endpoint := fmt.Sprintf("%s/api/v1/orgs/%d/secrets/%s", r.client.Host, plan.OrgID.ValueInt64(), plan.Name.ValueString())
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPatch, endpoint, bytes.NewReader(bodyJSON))
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to build request", err.Error())
-		return
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	httpResp, err := r.client.HTTPClient.Do(httpReq)
-	if err != nil {
-		resp.Diagnostics.AddError("API request failed", err.Error())
-		return
-	}
+	httpResp, ok := doRequest(ctx, r.client, http.MethodPatch, endpoint, bodyJSON, []int{http.StatusOK}, &resp.Diagnostics)
+	if !ok { return }
 	defer httpResp.Body.Close()
 
-	if httpResp.StatusCode != http.StatusOK {
-		resp.Diagnostics.AddError(
-			"Unexpected API response",
-			fmt.Sprintf("PATCH /orgs/%d/secrets/%s returned status %d", plan.OrgID.ValueInt64(), plan.Name.ValueString(), httpResp.StatusCode),
-		)
-		return
-	}
-
 	var result globalSecretAPIResponse
-	if err := json.NewDecoder(httpResp.Body).Decode(&result); err != nil {
-		resp.Diagnostics.AddError("Failed to decode response", err.Error())
-		return
-	}
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
 
 	savedValue := plan.Value
 	mapOrgSecretToState(&result, &plan)
@@ -315,25 +244,9 @@ func (r *organizationSecretResource) Delete(ctx context.Context, req resource.De
 	}
 
 	endpoint := fmt.Sprintf("%s/api/v1/orgs/%d/secrets/%s", r.client.Host, data.OrgID.ValueInt64(), data.Name.ValueString())
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodDelete, endpoint, nil)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to build request", err.Error())
-		return
-	}
-
-	httpResp, err := r.client.HTTPClient.Do(httpReq)
-	if err != nil {
-		resp.Diagnostics.AddError("API request failed", err.Error())
-		return
-	}
-	defer httpResp.Body.Close()
-
-	if httpResp.StatusCode != http.StatusNoContent && httpResp.StatusCode != http.StatusOK {
-		resp.Diagnostics.AddError(
-			"Unexpected API response",
-			fmt.Sprintf("DELETE /orgs/%d/secrets/%s returned status %d", data.OrgID.ValueInt64(), data.Name.ValueString(), httpResp.StatusCode),
-		)
-	}
+	httpResp, ok := doRequest(ctx, r.client, http.MethodDelete, endpoint, nil, []int{http.StatusNoContent, http.StatusOK}, &resp.Diagnostics)
+	if !ok { return }
+	httpResp.Body.Close()
 }
 
 // ImportState accepts "org_id/secret_name".

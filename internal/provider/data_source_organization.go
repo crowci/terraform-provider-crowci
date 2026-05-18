@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -72,17 +71,8 @@ func (d *organizationDataSource) Read(ctx context.Context, req datasource.ReadRe
 	}
 
 	endpoint := fmt.Sprintf("%s/api/v1/orgs/%d", d.client.Host, data.ID.ValueInt64())
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to build request", err.Error())
-		return
-	}
-
-	httpResp, err := d.client.HTTPClient.Do(httpReq)
-	if err != nil {
-		resp.Diagnostics.AddError("API request failed", err.Error())
-		return
-	}
+	httpResp, ok := doRequest(ctx, d.client, http.MethodGet, endpoint, nil, []int{http.StatusOK, http.StatusNotFound}, &resp.Diagnostics)
+	if !ok { return }
 	defer httpResp.Body.Close()
 
 	if httpResp.StatusCode == http.StatusNotFound {
@@ -92,19 +82,9 @@ func (d *organizationDataSource) Read(ctx context.Context, req datasource.ReadRe
 		)
 		return
 	}
-	if httpResp.StatusCode != http.StatusOK {
-		resp.Diagnostics.AddError(
-			"Unexpected API response",
-			fmt.Sprintf("GET /orgs/%d returned status %d", data.ID.ValueInt64(), httpResp.StatusCode),
-		)
-		return
-	}
 
 	var result organizationAPIResponse
-	if err := json.NewDecoder(httpResp.Body).Decode(&result); err != nil {
-		resp.Diagnostics.AddError("Failed to decode response", err.Error())
-		return
-	}
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
 
 	data.ForgeID = int64NullIfZero(result.ForgeID)
 	data.Name = types.StringValue(result.Name)

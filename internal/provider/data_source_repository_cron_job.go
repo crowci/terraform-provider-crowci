@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -100,17 +99,8 @@ func (d *repositoryCronJobDataSource) Read(ctx context.Context, req datasource.R
 	}
 
 	endpoint := fmt.Sprintf("%s/api/v1/repos/%d/cron/%d", d.client.Host, data.RepoID.ValueInt64(), data.ID.ValueInt64())
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to build request", err.Error())
-		return
-	}
-
-	httpResp, err := d.client.HTTPClient.Do(httpReq)
-	if err != nil {
-		resp.Diagnostics.AddError("API request failed", err.Error())
-		return
-	}
+	httpResp, ok := doRequest(ctx, d.client, http.MethodGet, endpoint, nil, []int{http.StatusOK, http.StatusNotFound}, &resp.Diagnostics)
+	if !ok { return }
 	defer httpResp.Body.Close()
 
 	if httpResp.StatusCode == http.StatusNotFound {
@@ -120,19 +110,9 @@ func (d *repositoryCronJobDataSource) Read(ctx context.Context, req datasource.R
 		)
 		return
 	}
-	if httpResp.StatusCode != http.StatusOK {
-		resp.Diagnostics.AddError(
-			"Unexpected API response",
-			fmt.Sprintf("GET /repos/%d/cron/%d returned status %d", data.RepoID.ValueInt64(), data.ID.ValueInt64(), httpResp.StatusCode),
-		)
-		return
-	}
 
 	var result cronJobAPIResponse
-	if err := json.NewDecoder(httpResp.Body).Decode(&result); err != nil {
-		resp.Diagnostics.AddError("Failed to decode response", err.Error())
-		return
-	}
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
 
 	data.Name = types.StringValue(result.Name)
 	data.Schedule = types.StringValue(result.Schedule)

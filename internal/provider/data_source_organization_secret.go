@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -87,17 +86,8 @@ func (d *organizationSecretDataSource) Read(ctx context.Context, req datasource.
 	}
 
 	endpoint := fmt.Sprintf("%s/api/v1/orgs/%d/secrets/%s", d.client.Host, data.OrgID.ValueInt64(), data.Name.ValueString())
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to build request", err.Error())
-		return
-	}
-
-	httpResp, err := d.client.HTTPClient.Do(httpReq)
-	if err != nil {
-		resp.Diagnostics.AddError("API request failed", err.Error())
-		return
-	}
+	httpResp, ok := doRequest(ctx, d.client, http.MethodGet, endpoint, nil, []int{http.StatusOK, http.StatusNotFound}, &resp.Diagnostics)
+	if !ok { return }
 	defer httpResp.Body.Close()
 
 	if httpResp.StatusCode == http.StatusNotFound {
@@ -107,19 +97,9 @@ func (d *organizationSecretDataSource) Read(ctx context.Context, req datasource.
 		)
 		return
 	}
-	if httpResp.StatusCode != http.StatusOK {
-		resp.Diagnostics.AddError(
-			"Unexpected API response",
-			fmt.Sprintf("GET /orgs/%d/secrets/%s returned status %d", data.OrgID.ValueInt64(), data.Name.ValueString(), httpResp.StatusCode),
-		)
-		return
-	}
 
 	var result globalSecretAPIResponse
-	if err := json.NewDecoder(httpResp.Body).Decode(&result); err != nil {
-		resp.Diagnostics.AddError("Failed to decode response", err.Error())
-		return
-	}
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
 
 	data.ID = types.Int64Value(result.ID)
 	data.Source = types.StringValue(result.Source)

@@ -1,11 +1,8 @@
 package provider
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 
@@ -155,44 +152,19 @@ func (r *organizationRegistryResource) Create(ctx context.Context, req resource.
 		Password: data.Password.ValueString(),
 	}
 
-	bodyJSON, err := json.Marshal(body)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to encode request", err.Error())
-		return
-	}
+	bodyJSON := marshalJSON(body, &resp.Diagnostics)
+	if bodyJSON == nil { return }
 
 	endpoint := fmt.Sprintf("%s/api/v1/orgs/%d/registries", r.client.Host, data.OrgID.ValueInt64())
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(bodyJSON))
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to build request", err.Error())
-		return
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	httpResp, err := r.client.HTTPClient.Do(httpReq)
-	if err != nil {
-		resp.Diagnostics.AddError("API request failed", err.Error())
-		return
-	}
+	httpResp, ok := doRequest(ctx, r.client, http.MethodPost, endpoint, bodyJSON, []int{http.StatusOK}, &resp.Diagnostics)
+	if !ok { return }
 	defer httpResp.Body.Close()
 
-	if httpResp.StatusCode != http.StatusOK {
-		b, _ := io.ReadAll(httpResp.Body)
-		resp.Diagnostics.AddError(
-			"Unexpected API response",
-			fmt.Sprintf("POST /orgs/%d/registries returned status %d: %s", data.OrgID.ValueInt64(), httpResp.StatusCode, b),
-		)
-		return
-	}
-
 	var result registryAPIResponse
-	if err := json.NewDecoder(httpResp.Body).Decode(&result); err != nil {
-		resp.Diagnostics.AddError("Failed to decode response", err.Error())
-		return
-	}
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
 
 	password := data.Password
-	mapRegistryToState(&result, &data)
+	mapOrgRegistryToState(&result, &data)
 	data.Password = password
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -207,39 +179,20 @@ func (r *organizationRegistryResource) Read(ctx context.Context, req resource.Re
 	}
 
 	endpoint := fmt.Sprintf("%s/api/v1/orgs/%d/registries/%s", r.client.Host, data.OrgID.ValueInt64(), data.Address.ValueString())
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to build request", err.Error())
-		return
-	}
-
-	httpResp, err := r.client.HTTPClient.Do(httpReq)
-	if err != nil {
-		resp.Diagnostics.AddError("API request failed", err.Error())
-		return
-	}
+	httpResp, ok := doRequest(ctx, r.client, http.MethodGet, endpoint, nil, []int{http.StatusOK, http.StatusNotFound}, &resp.Diagnostics)
+	if !ok { return }
 	defer httpResp.Body.Close()
 
 	if httpResp.StatusCode == http.StatusNotFound {
 		resp.State.RemoveResource(ctx)
 		return
 	}
-	if httpResp.StatusCode != http.StatusOK {
-		resp.Diagnostics.AddError(
-			"Unexpected API response",
-			fmt.Sprintf("GET /orgs/%d/registries/%s returned status %d", data.OrgID.ValueInt64(), data.Address.ValueString(), httpResp.StatusCode),
-		)
-		return
-	}
 
 	var result registryAPIResponse
-	if err := json.NewDecoder(httpResp.Body).Decode(&result); err != nil {
-		resp.Diagnostics.AddError("Failed to decode response", err.Error())
-		return
-	}
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
 
 	password := data.Password
-	mapRegistryToState(&result, &data)
+	mapOrgRegistryToState(&result, &data)
 	data.Password = password
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -273,44 +226,19 @@ func (r *organizationRegistryResource) Update(ctx context.Context, req resource.
 		body.Password = &v
 	}
 
-	bodyJSON, err := json.Marshal(body)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to encode request", err.Error())
-		return
-	}
+	bodyJSON := marshalJSON(body, &resp.Diagnostics)
+	if bodyJSON == nil { return }
 
 	endpoint := fmt.Sprintf("%s/api/v1/orgs/%d/registries/%s", r.client.Host, state.OrgID.ValueInt64(), state.Address.ValueString())
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPatch, endpoint, bytes.NewReader(bodyJSON))
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to build request", err.Error())
-		return
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	httpResp, err := r.client.HTTPClient.Do(httpReq)
-	if err != nil {
-		resp.Diagnostics.AddError("API request failed", err.Error())
-		return
-	}
+	httpResp, ok := doRequest(ctx, r.client, http.MethodPatch, endpoint, bodyJSON, []int{http.StatusOK}, &resp.Diagnostics)
+	if !ok { return }
 	defer httpResp.Body.Close()
 
-	if httpResp.StatusCode != http.StatusOK {
-		b, _ := io.ReadAll(httpResp.Body)
-		resp.Diagnostics.AddError(
-			"Unexpected API response",
-			fmt.Sprintf("PATCH /orgs/%d/registries/%s returned status %d: %s", state.OrgID.ValueInt64(), state.Address.ValueString(), httpResp.StatusCode, b),
-		)
-		return
-	}
-
 	var result registryAPIResponse
-	if err := json.NewDecoder(httpResp.Body).Decode(&result); err != nil {
-		resp.Diagnostics.AddError("Failed to decode response", err.Error())
-		return
-	}
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
 
 	password := plan.Password
-	mapRegistryToState(&result, &plan)
+	mapOrgRegistryToState(&result, &plan)
 	plan.Password = password
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -325,25 +253,9 @@ func (r *organizationRegistryResource) Delete(ctx context.Context, req resource.
 	}
 
 	endpoint := fmt.Sprintf("%s/api/v1/orgs/%d/registries/%s", r.client.Host, data.OrgID.ValueInt64(), data.Address.ValueString())
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodDelete, endpoint, nil)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to build request", err.Error())
-		return
-	}
-
-	httpResp, err := r.client.HTTPClient.Do(httpReq)
-	if err != nil {
-		resp.Diagnostics.AddError("API request failed", err.Error())
-		return
-	}
-	defer httpResp.Body.Close()
-
-	if httpResp.StatusCode != http.StatusNoContent && httpResp.StatusCode != http.StatusOK {
-		resp.Diagnostics.AddError(
-			"Unexpected API response",
-			fmt.Sprintf("DELETE /orgs/%d/registries/%s returned status %d", data.OrgID.ValueInt64(), data.Address.ValueString(), httpResp.StatusCode),
-		)
-	}
+	httpResp, ok := doRequest(ctx, r.client, http.MethodDelete, endpoint, nil, []int{http.StatusNoContent, http.StatusOK}, &resp.Diagnostics)
+	if !ok { return }
+	httpResp.Body.Close()
 }
 
 // ImportState accepts "org_id/address".
@@ -374,7 +286,7 @@ func (r *organizationRegistryResource) ImportState(ctx context.Context, req reso
 	})...)
 }
 
-func mapRegistryToState(r *registryAPIResponse, data *organizationRegistryResourceModel) {
+func mapOrgRegistryToState(r *registryAPIResponse, data *organizationRegistryResourceModel) {
 	data.ID = types.Int64Value(r.ID)
 	data.OrgID = types.Int64Value(r.OrgID)
 	data.Address = types.StringValue(r.Address)

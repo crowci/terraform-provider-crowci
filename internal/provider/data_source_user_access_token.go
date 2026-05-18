@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -102,32 +101,12 @@ func (d *userAccessTokenDataSource) Read(ctx context.Context, req datasource.Rea
 	}
 
 	endpoint := fmt.Sprintf("%s/api/v1/user/access-tokens/%d", d.client.Host, data.TokenID.ValueInt64())
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to build request", err.Error())
-		return
-	}
-
-	httpResp, err := d.client.HTTPClient.Do(httpReq)
-	if err != nil {
-		resp.Diagnostics.AddError("API request failed", err.Error())
-		return
-	}
+	httpResp, ok := doRequest(ctx, d.client, http.MethodGet, endpoint, nil, []int{http.StatusOK}, &resp.Diagnostics)
+	if !ok { return }
 	defer httpResp.Body.Close()
 
-	if httpResp.StatusCode != http.StatusOK {
-		resp.Diagnostics.AddError(
-			"Unexpected API response",
-			fmt.Sprintf("GET /user/access-tokens/%d returned status %d", data.TokenID.ValueInt64(), httpResp.StatusCode),
-		)
-		return
-	}
-
 	var result accessTokenAPIResponse
-	if err := json.NewDecoder(httpResp.Body).Decode(&result); err != nil {
-		resp.Diagnostics.AddError("Failed to decode response", err.Error())
-		return
-	}
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
 
 	data.ID = types.Int64Value(result.ID)
 	data.Name = types.StringValue(result.Name)

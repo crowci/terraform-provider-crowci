@@ -1,11 +1,8 @@
 package provider
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -113,45 +110,20 @@ func (r *globalSecretResource) Create(ctx context.Context, req resource.CreateRe
 	}{
 		Name:   data.Name.ValueString(),
 		Value:  data.Value.ValueString(),
-		Events: listToStrings(ctx, data.Events),
-		Images: listToStrings(ctx, data.Images),
+		Events: listToStrings(data.Events),
+		Images: listToStrings(data.Images),
 	}
 
-	bodyJSON, err := json.Marshal(body)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to encode request", err.Error())
-		return
-	}
+	bodyJSON := marshalJSON(body, &resp.Diagnostics)
+	if bodyJSON == nil { return }
 
 	endpoint := fmt.Sprintf("%s/api/v1/secrets", r.client.Host)
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(bodyJSON))
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to build request", err.Error())
-		return
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	httpResp, err := r.client.HTTPClient.Do(httpReq)
-	if err != nil {
-		resp.Diagnostics.AddError("API request failed", err.Error())
-		return
-	}
+	httpResp, ok := doRequest(ctx, r.client, http.MethodPost, endpoint, bodyJSON, []int{http.StatusOK}, &resp.Diagnostics)
+	if !ok { return }
 	defer httpResp.Body.Close()
 
-	if httpResp.StatusCode != http.StatusOK {
-		b, _ := io.ReadAll(httpResp.Body)
-		resp.Diagnostics.AddError(
-			"Unexpected API response",
-			fmt.Sprintf("POST /secrets returned status %d: %s", httpResp.StatusCode, b),
-		)
-		return
-	}
-
 	var result globalSecretAPIResponse
-	if err := json.NewDecoder(httpResp.Body).Decode(&result); err != nil {
-		resp.Diagnostics.AddError("Failed to decode response", err.Error())
-		return
-	}
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
 
 	value := data.Value
 	mapGlobalSecretToState(&result, &data)
@@ -168,36 +140,17 @@ func (r *globalSecretResource) Read(ctx context.Context, req resource.ReadReques
 	}
 
 	endpoint := fmt.Sprintf("%s/api/v1/secrets/%s", r.client.Host, data.Name.ValueString())
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to build request", err.Error())
-		return
-	}
-
-	httpResp, err := r.client.HTTPClient.Do(httpReq)
-	if err != nil {
-		resp.Diagnostics.AddError("API request failed", err.Error())
-		return
-	}
+	httpResp, ok := doRequest(ctx, r.client, http.MethodGet, endpoint, nil, []int{http.StatusOK, http.StatusNotFound}, &resp.Diagnostics)
+	if !ok { return }
 	defer httpResp.Body.Close()
 
 	if httpResp.StatusCode == http.StatusNotFound {
 		resp.State.RemoveResource(ctx)
 		return
 	}
-	if httpResp.StatusCode != http.StatusOK {
-		resp.Diagnostics.AddError(
-			"Unexpected API response",
-			fmt.Sprintf("GET /secrets/%s returned status %d", data.Name.ValueString(), httpResp.StatusCode),
-		)
-		return
-	}
 
 	var result globalSecretAPIResponse
-	if err := json.NewDecoder(httpResp.Body).Decode(&result); err != nil {
-		resp.Diagnostics.AddError("Failed to decode response", err.Error())
-		return
-	}
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
 
 	// value is not returned by the API — preserve from prior state.
 	value := data.Value
@@ -221,8 +174,8 @@ func (r *globalSecretResource) Update(ctx context.Context, req resource.UpdateRe
 	}
 	plan.ID = state.ID
 
-	events := listToStrings(ctx, plan.Events)
-	images := listToStrings(ctx, plan.Images)
+	events := listToStrings(plan.Events)
+	images := listToStrings(plan.Images)
 	value := plan.Value.ValueString()
 
 	body := struct {
@@ -235,40 +188,16 @@ func (r *globalSecretResource) Update(ctx context.Context, req resource.UpdateRe
 		Images: images,
 	}
 
-	bodyJSON, err := json.Marshal(body)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to encode request", err.Error())
-		return
-	}
+	bodyJSON := marshalJSON(body, &resp.Diagnostics)
+	if bodyJSON == nil { return }
 
 	endpoint := fmt.Sprintf("%s/api/v1/secrets/%s", r.client.Host, plan.Name.ValueString())
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPatch, endpoint, bytes.NewReader(bodyJSON))
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to build request", err.Error())
-		return
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	httpResp, err := r.client.HTTPClient.Do(httpReq)
-	if err != nil {
-		resp.Diagnostics.AddError("API request failed", err.Error())
-		return
-	}
+	httpResp, ok := doRequest(ctx, r.client, http.MethodPatch, endpoint, bodyJSON, []int{http.StatusOK}, &resp.Diagnostics)
+	if !ok { return }
 	defer httpResp.Body.Close()
 
-	if httpResp.StatusCode != http.StatusOK {
-		resp.Diagnostics.AddError(
-			"Unexpected API response",
-			fmt.Sprintf("PATCH /secrets/%s returned status %d", plan.Name.ValueString(), httpResp.StatusCode),
-		)
-		return
-	}
-
 	var result globalSecretAPIResponse
-	if err := json.NewDecoder(httpResp.Body).Decode(&result); err != nil {
-		resp.Diagnostics.AddError("Failed to decode response", err.Error())
-		return
-	}
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
 
 	savedValue := plan.Value
 	mapGlobalSecretToState(&result, &plan)
@@ -285,25 +214,9 @@ func (r *globalSecretResource) Delete(ctx context.Context, req resource.DeleteRe
 	}
 
 	endpoint := fmt.Sprintf("%s/api/v1/secrets/%s", r.client.Host, data.Name.ValueString())
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodDelete, endpoint, nil)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to build request", err.Error())
-		return
-	}
-
-	httpResp, err := r.client.HTTPClient.Do(httpReq)
-	if err != nil {
-		resp.Diagnostics.AddError("API request failed", err.Error())
-		return
-	}
-	defer httpResp.Body.Close()
-
-	if httpResp.StatusCode != http.StatusNoContent && httpResp.StatusCode != http.StatusOK {
-		resp.Diagnostics.AddError(
-			"Unexpected API response",
-			fmt.Sprintf("DELETE /secrets/%s returned status %d", data.Name.ValueString(), httpResp.StatusCode),
-		)
-	}
+	httpResp, ok := doRequest(ctx, r.client, http.MethodDelete, endpoint, nil, []int{http.StatusNoContent, http.StatusOK}, &resp.Diagnostics)
+	if !ok { return }
+	httpResp.Body.Close()
 }
 
 func (r *globalSecretResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {

@@ -1,11 +1,8 @@
 package provider
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -368,72 +365,26 @@ func (r *repositoryResource) Create(ctx context.Context, req resource.CreateRequ
 	}
 
 	postEndpoint := fmt.Sprintf("%s/api/v1/repos?%s", r.client.Host, params.Encode())
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, postEndpoint, nil)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to build request", err.Error())
-		return
-	}
-
-	httpResp, err := r.client.HTTPClient.Do(httpReq)
-	if err != nil {
-		resp.Diagnostics.AddError("API request failed", err.Error())
-		return
-	}
+	httpResp, ok := doRequest(ctx, r.client, http.MethodPost, postEndpoint, nil, []int{http.StatusOK}, &resp.Diagnostics)
+	if !ok { return }
 	defer httpResp.Body.Close()
 
-	if httpResp.StatusCode != http.StatusOK {
-		b, _ := io.ReadAll(httpResp.Body)
-		resp.Diagnostics.AddError(
-			"Unexpected API response",
-			fmt.Sprintf("POST /repos returned status %d: %s", httpResp.StatusCode, b),
-		)
-		return
-	}
-
 	var createResult repositoryAPIResponse
-	if err := json.NewDecoder(httpResp.Body).Decode(&createResult); err != nil {
-		resp.Diagnostics.AddError("Failed to decode response", err.Error())
-		return
-	}
+	if !decodeJSON(httpResp.Body, &createResult, &resp.Diagnostics) { return }
 
 	// PATCH to apply any additional planned attributes (timeout, visibility, etc.)
 	// that the POST endpoint does not accept.
 	patchBody := buildRepoPatchBody(ctx, &data)
-	patchJSON, err := json.Marshal(patchBody)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to encode patch request", err.Error())
-		return
-	}
+	patchJSON := marshalJSON(patchBody, &resp.Diagnostics)
+	if patchJSON == nil { return }
 
 	patchEndpoint := fmt.Sprintf("%s/api/v1/repos/%d", r.client.Host, createResult.ID)
-	patchReq, err := http.NewRequestWithContext(ctx, http.MethodPatch, patchEndpoint, bytes.NewReader(patchJSON))
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to build patch request", err.Error())
-		return
-	}
-	patchReq.Header.Set("Content-Type", "application/json")
-
-	patchResp, err := r.client.HTTPClient.Do(patchReq)
-	if err != nil {
-		resp.Diagnostics.AddError("API patch request failed", err.Error())
-		return
-	}
+	patchResp, ok := doRequest(ctx, r.client, http.MethodPatch, patchEndpoint, patchJSON, []int{http.StatusOK}, &resp.Diagnostics)
+	if !ok { return }
 	defer patchResp.Body.Close()
 
-	if patchResp.StatusCode != http.StatusOK {
-		b, _ := io.ReadAll(patchResp.Body)
-		resp.Diagnostics.AddError(
-			"Unexpected API response",
-			fmt.Sprintf("PATCH /repos/%d returned status %d: %s", createResult.ID, patchResp.StatusCode, b),
-		)
-		return
-	}
-
 	var result repositoryAPIResponse
-	if err := json.NewDecoder(patchResp.Body).Decode(&result); err != nil {
-		resp.Diagnostics.AddError("Failed to decode patch response", err.Error())
-		return
-	}
+	if !decodeJSON(patchResp.Body, &result, &resp.Diagnostics) { return }
 
 	mapRepoToState(&result, &data)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -447,36 +398,17 @@ func (r *repositoryResource) Read(ctx context.Context, req resource.ReadRequest,
 	}
 
 	endpoint := fmt.Sprintf("%s/api/v1/repos/%d", r.client.Host, data.ID.ValueInt64())
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to build request", err.Error())
-		return
-	}
-
-	httpResp, err := r.client.HTTPClient.Do(httpReq)
-	if err != nil {
-		resp.Diagnostics.AddError("API request failed", err.Error())
-		return
-	}
+	httpResp, ok := doRequest(ctx, r.client, http.MethodGet, endpoint, nil, []int{http.StatusOK, http.StatusNotFound}, &resp.Diagnostics)
+	if !ok { return }
 	defer httpResp.Body.Close()
 
 	if httpResp.StatusCode == http.StatusNotFound {
 		resp.State.RemoveResource(ctx)
 		return
 	}
-	if httpResp.StatusCode != http.StatusOK {
-		resp.Diagnostics.AddError(
-			"Unexpected API response",
-			fmt.Sprintf("GET /repos/%d returned status %d", data.ID.ValueInt64(), httpResp.StatusCode),
-		)
-		return
-	}
 
 	var result repositoryAPIResponse
-	if err := json.NewDecoder(httpResp.Body).Decode(&result); err != nil {
-		resp.Diagnostics.AddError("Failed to decode response", err.Error())
-		return
-	}
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
 
 	mapRepoToState(&result, &data)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -496,41 +428,16 @@ func (r *repositoryResource) Update(ctx context.Context, req resource.UpdateRequ
 	}
 
 	body := buildRepoPatchBody(ctx, &plan)
-	bodyJSON, err := json.Marshal(body)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to encode request", err.Error())
-		return
-	}
+	bodyJSON := marshalJSON(body, &resp.Diagnostics)
+	if bodyJSON == nil { return }
 
 	endpoint := fmt.Sprintf("%s/api/v1/repos/%d", r.client.Host, state.ID.ValueInt64())
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPatch, endpoint, bytes.NewReader(bodyJSON))
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to build request", err.Error())
-		return
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	httpResp, err := r.client.HTTPClient.Do(httpReq)
-	if err != nil {
-		resp.Diagnostics.AddError("API request failed", err.Error())
-		return
-	}
+	httpResp, ok := doRequest(ctx, r.client, http.MethodPatch, endpoint, bodyJSON, []int{http.StatusOK}, &resp.Diagnostics)
+	if !ok { return }
 	defer httpResp.Body.Close()
 
-	if httpResp.StatusCode != http.StatusOK {
-		b, _ := io.ReadAll(httpResp.Body)
-		resp.Diagnostics.AddError(
-			"Unexpected API response",
-			fmt.Sprintf("PATCH /repos/%d returned status %d: %s", state.ID.ValueInt64(), httpResp.StatusCode, b),
-		)
-		return
-	}
-
 	var result repositoryAPIResponse
-	if err := json.NewDecoder(httpResp.Body).Decode(&result); err != nil {
-		resp.Diagnostics.AddError("Failed to decode response", err.Error())
-		return
-	}
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
 
 	mapRepoToState(&result, &plan)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -544,25 +451,9 @@ func (r *repositoryResource) Delete(ctx context.Context, req resource.DeleteRequ
 	}
 
 	endpoint := fmt.Sprintf("%s/api/v1/repos/%d", r.client.Host, data.ID.ValueInt64())
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodDelete, endpoint, nil)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to build request", err.Error())
-		return
-	}
-
-	httpResp, err := r.client.HTTPClient.Do(httpReq)
-	if err != nil {
-		resp.Diagnostics.AddError("API request failed", err.Error())
-		return
-	}
-	defer httpResp.Body.Close()
-
-	if httpResp.StatusCode != http.StatusNoContent && httpResp.StatusCode != http.StatusOK {
-		resp.Diagnostics.AddError(
-			"Unexpected API response",
-			fmt.Sprintf("DELETE /repos/%d returned status %d", data.ID.ValueInt64(), httpResp.StatusCode),
-		)
-	}
+	httpResp, ok := doRequest(ctx, r.client, http.MethodDelete, endpoint, nil, []int{http.StatusNoContent, http.StatusOK}, &resp.Diagnostics)
+	if !ok { return }
+	httpResp.Body.Close()
 }
 
 func (r *repositoryResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
@@ -615,7 +506,7 @@ func buildRepoPatchBody(ctx context.Context, plan *repositoryResourceModel) repo
 		body.AllowPR = &v
 	}
 	if !plan.CancelPreviousPipelineEvents.IsNull() && !plan.CancelPreviousPipelineEvents.IsUnknown() {
-		body.CancelPreviousPipelineEvents = listToStrings(ctx, plan.CancelPreviousPipelineEvents)
+		body.CancelPreviousPipelineEvents = listToStrings(plan.CancelPreviousPipelineEvents)
 	}
 	if !plan.ConfigFile.IsNull() && !plan.ConfigFile.IsUnknown() {
 		v := plan.ConfigFile.ValueString()
@@ -634,7 +525,7 @@ func buildRepoPatchBody(ctx context.Context, plan *repositoryResourceModel) repo
 		body.LogsKeepMin = &v
 	}
 	if !plan.NetrcTrusted.IsNull() && !plan.NetrcTrusted.IsUnknown() {
-		body.NetrcTrusted = listToStrings(ctx, plan.NetrcTrusted)
+		body.NetrcTrusted = listToStrings(plan.NetrcTrusted)
 	}
 	if !plan.RequireApproval.IsNull() && !plan.RequireApproval.IsUnknown() {
 		v := plan.RequireApproval.ValueString()
