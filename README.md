@@ -1,5 +1,9 @@
 # Terraform provider for Crow CI server
 
+## Note
+
+- The Github repository is a push-only mirror for publishing to Opentofu/Terraform registry. Please submit your issues/PR to the [repository on Codefloe](https://codefloe.com/crowci/terraform-provider-crowci)
+
 ## Development
 
 ### Setting up test Crow CI with localhost forgejo instance
