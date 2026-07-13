@@ -3,7 +3,7 @@
 go = "1.26.5"
 opentofu = "1.12.3"
 prek = "0.3.2"
-terraform = "1.15.7"
+terraform = "1.15.8"
 
 [tasks.test]
 description = "Run acceptance tests against the local dev server"
