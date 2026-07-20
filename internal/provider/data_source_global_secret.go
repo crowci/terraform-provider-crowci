@@ -103,7 +103,9 @@ func (d *globalSecretDataSource) Read(ctx context.Context, req datasource.ReadRe
 
 	endpoint := fmt.Sprintf("%s/api/v1/secrets/%s", d.client.Host, data.Name.ValueString())
 	httpResp, ok := doRequest(ctx, d.client, http.MethodGet, endpoint, nil, []int{http.StatusOK, http.StatusNotFound}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	if httpResp.StatusCode == http.StatusNotFound {
@@ -115,7 +117,9 @@ func (d *globalSecretDataSource) Read(ctx context.Context, req datasource.ReadRe
 	}
 
 	var result globalSecretAPIResponse
-	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) {
+		return
+	}
 
 	data.ID = types.Int64Value(result.ID)
 	data.Source = types.StringValue(result.Source)

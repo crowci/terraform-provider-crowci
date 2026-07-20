@@ -170,11 +170,15 @@ func (d *userRepositoriesActiveDataSource) Schema(_ context.Context, _ datasourc
 func (d *userRepositoriesActiveDataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
 	endpoint := fmt.Sprintf("%s/api/v1/user/repos/active", d.client.Host)
 	httpResp, ok := doRequest(ctx, d.client, http.MethodGet, endpoint, nil, []int{http.StatusOK}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	var results []repoLastPipelineAPIResponse
-	if !decodeJSON(httpResp.Body, &results, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &results, &resp.Diagnostics) {
+		return
+	}
 
 	repos := make([]activeRepositoryItemModel, len(results))
 	for i, r := range results {

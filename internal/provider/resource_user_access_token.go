@@ -142,15 +142,21 @@ func (r *userAccessTokenResource) Create(ctx context.Context, req resource.Creat
 	}
 
 	bodyJSON := marshalJSON(body, &resp.Diagnostics)
-	if bodyJSON == nil { return }
+	if bodyJSON == nil {
+		return
+	}
 
 	endpoint := fmt.Sprintf("%s/api/v1/user/access-tokens", r.client.Host)
 	httpResp, ok := doRequest(ctx, r.client, http.MethodPost, endpoint, bodyJSON, []int{http.StatusOK}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	var result accessTokenAPIResponse
-	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) {
+		return
+	}
 
 	mapAccessTokenToState(&result, &data)
 	// token is only present in the create response.
@@ -168,7 +174,9 @@ func (r *userAccessTokenResource) Read(ctx context.Context, req resource.ReadReq
 
 	endpoint := fmt.Sprintf("%s/api/v1/user/access-tokens/%d", r.client.Host, data.ID.ValueInt64())
 	httpResp, ok := doRequest(ctx, r.client, http.MethodGet, endpoint, nil, []int{http.StatusOK, http.StatusNotFound}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	if httpResp.StatusCode == http.StatusNotFound {
@@ -177,7 +185,9 @@ func (r *userAccessTokenResource) Read(ctx context.Context, req resource.ReadReq
 	}
 
 	var result accessTokenAPIResponse
-	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) {
+		return
+	}
 
 	// Preserve the token value from prior state — GET does not return it.
 	token := data.Token
@@ -210,15 +220,21 @@ func (r *userAccessTokenResource) Update(ctx context.Context, req resource.Updat
 	}
 
 	bodyJSON := marshalJSON(body, &resp.Diagnostics)
-	if bodyJSON == nil { return }
+	if bodyJSON == nil {
+		return
+	}
 
 	endpoint := fmt.Sprintf("%s/api/v1/user/access-tokens/%d", r.client.Host, plan.ID.ValueInt64())
 	httpResp, ok := doRequest(ctx, r.client, http.MethodPatch, endpoint, bodyJSON, []int{http.StatusOK}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	var result accessTokenAPIResponse
-	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) {
+		return
+	}
 
 	mapAccessTokenToState(&result, &plan)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -233,7 +249,9 @@ func (r *userAccessTokenResource) Delete(ctx context.Context, req resource.Delet
 
 	endpoint := fmt.Sprintf("%s/api/v1/user/access-tokens/%d", r.client.Host, data.ID.ValueInt64())
 	httpResp, ok := doRequest(ctx, r.client, http.MethodDelete, endpoint, nil, []int{http.StatusNoContent, http.StatusOK}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	httpResp.Body.Close()
 }
 

@@ -21,8 +21,8 @@ type repositoryRegistriesDataSource struct {
 }
 
 type repositoryRegistriesDataSourceModel struct {
-	RepoID     types.Int64               `tfsdk:"repo_id"`
-	Registries []repositoryRegistryItem  `tfsdk:"registries"`
+	RepoID     types.Int64              `tfsdk:"repo_id"`
+	Registries []repositoryRegistryItem `tfsdk:"registries"`
 }
 
 type repositoryRegistryItem struct {

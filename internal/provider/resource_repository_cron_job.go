@@ -174,15 +174,21 @@ func (r *repositoryCronJobResource) Create(ctx context.Context, req resource.Cre
 	}
 
 	bodyJSON := marshalJSON(body, &resp.Diagnostics)
-	if bodyJSON == nil { return }
+	if bodyJSON == nil {
+		return
+	}
 
 	endpoint := fmt.Sprintf("%s/api/v1/repos/%d/cron", r.client.Host, data.RepoID.ValueInt64())
 	httpResp, ok := doRequest(ctx, r.client, http.MethodPost, endpoint, bodyJSON, []int{http.StatusOK}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	var result cronJobAPIResponse
-	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) {
+		return
+	}
 
 	mapCronJobToState(&result, &data)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -198,7 +204,9 @@ func (r *repositoryCronJobResource) Read(ctx context.Context, req resource.ReadR
 
 	endpoint := fmt.Sprintf("%s/api/v1/repos/%d/cron/%d", r.client.Host, data.RepoID.ValueInt64(), data.ID.ValueInt64())
 	httpResp, ok := doRequest(ctx, r.client, http.MethodGet, endpoint, nil, []int{http.StatusOK, http.StatusNotFound}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	if httpResp.StatusCode == http.StatusNotFound {
@@ -207,7 +215,9 @@ func (r *repositoryCronJobResource) Read(ctx context.Context, req resource.ReadR
 	}
 
 	var result cronJobAPIResponse
-	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) {
+		return
+	}
 
 	mapCronJobToState(&result, &data)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -246,15 +256,21 @@ func (r *repositoryCronJobResource) Update(ctx context.Context, req resource.Upd
 	}
 
 	bodyJSON := marshalJSON(body, &resp.Diagnostics)
-	if bodyJSON == nil { return }
+	if bodyJSON == nil {
+		return
+	}
 
 	endpoint := fmt.Sprintf("%s/api/v1/repos/%d/cron/%d", r.client.Host, state.RepoID.ValueInt64(), state.ID.ValueInt64())
 	httpResp, ok := doRequest(ctx, r.client, http.MethodPatch, endpoint, bodyJSON, []int{http.StatusOK}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	var result cronJobAPIResponse
-	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) {
+		return
+	}
 
 	mapCronJobToState(&result, &plan)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -270,7 +286,9 @@ func (r *repositoryCronJobResource) Delete(ctx context.Context, req resource.Del
 
 	endpoint := fmt.Sprintf("%s/api/v1/repos/%d/cron/%d", r.client.Host, data.RepoID.ValueInt64(), data.ID.ValueInt64())
 	httpResp, ok := doRequest(ctx, r.client, http.MethodDelete, endpoint, nil, []int{http.StatusNoContent, http.StatusOK}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	httpResp.Body.Close()
 }
 

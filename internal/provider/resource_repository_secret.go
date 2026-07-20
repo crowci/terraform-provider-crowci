@@ -146,15 +146,21 @@ func (r *repositorySecretResource) Create(ctx context.Context, req resource.Crea
 	}
 
 	bodyJSON := marshalJSON(body, &resp.Diagnostics)
-	if bodyJSON == nil { return }
+	if bodyJSON == nil {
+		return
+	}
 
 	endpoint := fmt.Sprintf("%s/api/v1/repos/%d/secrets", r.client.Host, data.RepoID.ValueInt64())
 	httpResp, ok := doRequest(ctx, r.client, http.MethodPost, endpoint, bodyJSON, []int{http.StatusOK}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	var result globalSecretAPIResponse
-	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) {
+		return
+	}
 
 	value := data.Value
 	mapRepoSecretToState(&result, &data)
@@ -173,7 +179,9 @@ func (r *repositorySecretResource) Read(ctx context.Context, req resource.ReadRe
 
 	endpoint := fmt.Sprintf("%s/api/v1/repos/%d/secrets/%s", r.client.Host, data.RepoID.ValueInt64(), data.Name.ValueString())
 	httpResp, ok := doRequest(ctx, r.client, http.MethodGet, endpoint, nil, []int{http.StatusOK, http.StatusNotFound}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	if httpResp.StatusCode == http.StatusNotFound {
@@ -182,7 +190,9 @@ func (r *repositorySecretResource) Read(ctx context.Context, req resource.ReadRe
 	}
 
 	var result globalSecretAPIResponse
-	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) {
+		return
+	}
 
 	// value is not returned by the API — preserve from prior state.
 	value := data.Value
@@ -218,15 +228,21 @@ func (r *repositorySecretResource) Update(ctx context.Context, req resource.Upda
 	}
 
 	bodyJSON := marshalJSON(body, &resp.Diagnostics)
-	if bodyJSON == nil { return }
+	if bodyJSON == nil {
+		return
+	}
 
 	endpoint := fmt.Sprintf("%s/api/v1/repos/%d/secrets/%s", r.client.Host, plan.RepoID.ValueInt64(), plan.Name.ValueString())
 	httpResp, ok := doRequest(ctx, r.client, http.MethodPatch, endpoint, bodyJSON, []int{http.StatusOK}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	var result globalSecretAPIResponse
-	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) {
+		return
+	}
 
 	savedValue := plan.Value
 	mapRepoSecretToState(&result, &plan)
@@ -245,7 +261,9 @@ func (r *repositorySecretResource) Delete(ctx context.Context, req resource.Dele
 
 	endpoint := fmt.Sprintf("%s/api/v1/repos/%d/secrets/%s", r.client.Host, data.RepoID.ValueInt64(), data.Name.ValueString())
 	httpResp, ok := doRequest(ctx, r.client, http.MethodDelete, endpoint, nil, []int{http.StatusNoContent, http.StatusOK}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	httpResp.Body.Close()
 }
 

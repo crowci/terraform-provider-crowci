@@ -23,34 +23,34 @@ type repositoryDataSource struct {
 }
 
 type repositoryDataSourceModel struct {
-	ID                           types.Int64         `tfsdk:"id"`
-	ForgeRemoteID                types.String        `tfsdk:"forge_remote_id"`
-	ForgeID                      types.Int64         `tfsdk:"forge_id"`
-	OrgID                        types.Int64         `tfsdk:"org_id"`
-	Owner                        types.String        `tfsdk:"owner"`
-	Name                         types.String        `tfsdk:"name"`
-	FullName                     types.String        `tfsdk:"full_name"`
-	CloneURL                     types.String        `tfsdk:"clone_url"`
-	CloneURLSSH                  types.String        `tfsdk:"clone_url_ssh"`
-	ForgeURL                     types.String        `tfsdk:"forge_url"`
-	AvatarURL                    types.String        `tfsdk:"avatar_url"`
-	DefaultBranch                types.String        `tfsdk:"default_branch"`
-	Active                       types.Bool          `tfsdk:"active"`
-	Private                      types.Bool          `tfsdk:"private"`
-	PREnabled                    types.Bool          `tfsdk:"pr_enabled"`
-	AllowDeploy                  types.Bool          `tfsdk:"allow_deploy"`
-	AllowManual                  types.Bool          `tfsdk:"allow_manual"`
-	AllowPR                      types.Bool          `tfsdk:"allow_pr"`
-	Visibility                   types.String        `tfsdk:"visibility"`
-	RequireApproval              types.String        `tfsdk:"require_approval"`
-	Trusted                      types.Object        `tfsdk:"trusted"`
-	ConfigFile                   types.String        `tfsdk:"config_file"`
-	DeployTeam                   types.String        `tfsdk:"deploy_team"`
-	Timeout                      types.Int64         `tfsdk:"timeout"`
-	CancelPreviousPipelineEvents types.List          `tfsdk:"cancel_previous_pipeline_events"`
-	NetrcTrusted                 types.List          `tfsdk:"netrc_trusted"`
-	LogsKeepDuration             types.String        `tfsdk:"logs_keep_duration"`
-	LogsKeepMin                  types.Int64         `tfsdk:"logs_keep_min"`
+	ID                           types.Int64  `tfsdk:"id"`
+	ForgeRemoteID                types.String `tfsdk:"forge_remote_id"`
+	ForgeID                      types.Int64  `tfsdk:"forge_id"`
+	OrgID                        types.Int64  `tfsdk:"org_id"`
+	Owner                        types.String `tfsdk:"owner"`
+	Name                         types.String `tfsdk:"name"`
+	FullName                     types.String `tfsdk:"full_name"`
+	CloneURL                     types.String `tfsdk:"clone_url"`
+	CloneURLSSH                  types.String `tfsdk:"clone_url_ssh"`
+	ForgeURL                     types.String `tfsdk:"forge_url"`
+	AvatarURL                    types.String `tfsdk:"avatar_url"`
+	DefaultBranch                types.String `tfsdk:"default_branch"`
+	Active                       types.Bool   `tfsdk:"active"`
+	Private                      types.Bool   `tfsdk:"private"`
+	PREnabled                    types.Bool   `tfsdk:"pr_enabled"`
+	AllowDeploy                  types.Bool   `tfsdk:"allow_deploy"`
+	AllowManual                  types.Bool   `tfsdk:"allow_manual"`
+	AllowPR                      types.Bool   `tfsdk:"allow_pr"`
+	Visibility                   types.String `tfsdk:"visibility"`
+	RequireApproval              types.String `tfsdk:"require_approval"`
+	Trusted                      types.Object `tfsdk:"trusted"`
+	ConfigFile                   types.String `tfsdk:"config_file"`
+	DeployTeam                   types.String `tfsdk:"deploy_team"`
+	Timeout                      types.Int64  `tfsdk:"timeout"`
+	CancelPreviousPipelineEvents types.List   `tfsdk:"cancel_previous_pipeline_events"`
+	NetrcTrusted                 types.List   `tfsdk:"netrc_trusted"`
+	LogsKeepDuration             types.String `tfsdk:"logs_keep_duration"`
+	LogsKeepMin                  types.Int64  `tfsdk:"logs_keep_min"`
 }
 
 func (d *repositoryDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -211,7 +211,9 @@ func (d *repositoryDataSource) Read(ctx context.Context, req datasource.ReadRequ
 
 	endpoint := fmt.Sprintf("%s/api/v1/repos/%d", d.client.Host, data.ID.ValueInt64())
 	httpResp, ok := doRequest(ctx, d.client, http.MethodGet, endpoint, nil, []int{http.StatusOK, http.StatusNotFound}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	if httpResp.StatusCode == http.StatusNotFound {
@@ -223,7 +225,9 @@ func (d *repositoryDataSource) Read(ctx context.Context, req datasource.ReadRequ
 	}
 
 	var result repositoryAPIResponse
-	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) {
+		return
+	}
 
 	data.ForgeRemoteID = types.StringValue(result.ForgeRemoteID)
 	data.ForgeID = types.Int64Value(result.ForgeID)

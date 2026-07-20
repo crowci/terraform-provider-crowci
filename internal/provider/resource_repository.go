@@ -43,19 +43,19 @@ type repositoryResourceModel struct {
 	ForgeRemoteID types.String `tfsdk:"forge_remote_id"`
 	ForgeID       types.Int64  `tfsdk:"forge_id"`
 	// updatable optional+computed
-	AllowDeploy                  types.Bool          `tfsdk:"allow_deploy"`
-	AllowManual                  types.Bool          `tfsdk:"allow_manual"`
-	AllowPR                      types.Bool          `tfsdk:"allow_pr"`
-	CancelPreviousPipelineEvents types.List          `tfsdk:"cancel_previous_pipeline_events"`
-	ConfigFile                   types.String        `tfsdk:"config_file"`
-	DeployTeam                   types.String        `tfsdk:"deploy_team"`
-	LogsKeepDuration             types.String        `tfsdk:"logs_keep_duration"`
-	LogsKeepMin                  types.Int64         `tfsdk:"logs_keep_min"`
-	NetrcTrusted                 types.List          `tfsdk:"netrc_trusted"`
-	RequireApproval              types.String        `tfsdk:"require_approval"`
-	Timeout                      types.Int64         `tfsdk:"timeout"`
-	Trusted                      types.Object        `tfsdk:"trusted"`
-	Visibility                   types.String        `tfsdk:"visibility"`
+	AllowDeploy                  types.Bool   `tfsdk:"allow_deploy"`
+	AllowManual                  types.Bool   `tfsdk:"allow_manual"`
+	AllowPR                      types.Bool   `tfsdk:"allow_pr"`
+	CancelPreviousPipelineEvents types.List   `tfsdk:"cancel_previous_pipeline_events"`
+	ConfigFile                   types.String `tfsdk:"config_file"`
+	DeployTeam                   types.String `tfsdk:"deploy_team"`
+	LogsKeepDuration             types.String `tfsdk:"logs_keep_duration"`
+	LogsKeepMin                  types.Int64  `tfsdk:"logs_keep_min"`
+	NetrcTrusted                 types.List   `tfsdk:"netrc_trusted"`
+	RequireApproval              types.String `tfsdk:"require_approval"`
+	Timeout                      types.Int64  `tfsdk:"timeout"`
+	Trusted                      types.Object `tfsdk:"trusted"`
+	Visibility                   types.String `tfsdk:"visibility"`
 	// computed only
 	ID            types.Int64  `tfsdk:"id"`
 	Name          types.String `tfsdk:"name"`
@@ -366,25 +366,35 @@ func (r *repositoryResource) Create(ctx context.Context, req resource.CreateRequ
 
 	postEndpoint := fmt.Sprintf("%s/api/v1/repos?%s", r.client.Host, params.Encode())
 	httpResp, ok := doRequest(ctx, r.client, http.MethodPost, postEndpoint, nil, []int{http.StatusOK}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	var createResult repositoryAPIResponse
-	if !decodeJSON(httpResp.Body, &createResult, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &createResult, &resp.Diagnostics) {
+		return
+	}
 
 	// PATCH to apply any additional planned attributes (timeout, visibility, etc.)
 	// that the POST endpoint does not accept.
 	patchBody := buildRepoPatchBody(ctx, &data)
 	patchJSON := marshalJSON(patchBody, &resp.Diagnostics)
-	if patchJSON == nil { return }
+	if patchJSON == nil {
+		return
+	}
 
 	patchEndpoint := fmt.Sprintf("%s/api/v1/repos/%d", r.client.Host, createResult.ID)
 	patchResp, ok := doRequest(ctx, r.client, http.MethodPatch, patchEndpoint, patchJSON, []int{http.StatusOK}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer patchResp.Body.Close()
 
 	var result repositoryAPIResponse
-	if !decodeJSON(patchResp.Body, &result, &resp.Diagnostics) { return }
+	if !decodeJSON(patchResp.Body, &result, &resp.Diagnostics) {
+		return
+	}
 
 	mapRepoToState(&result, &data)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -399,7 +409,9 @@ func (r *repositoryResource) Read(ctx context.Context, req resource.ReadRequest,
 
 	endpoint := fmt.Sprintf("%s/api/v1/repos/%d", r.client.Host, data.ID.ValueInt64())
 	httpResp, ok := doRequest(ctx, r.client, http.MethodGet, endpoint, nil, []int{http.StatusOK, http.StatusNotFound}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	if httpResp.StatusCode == http.StatusNotFound {
@@ -408,7 +420,9 @@ func (r *repositoryResource) Read(ctx context.Context, req resource.ReadRequest,
 	}
 
 	var result repositoryAPIResponse
-	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) {
+		return
+	}
 
 	mapRepoToState(&result, &data)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -429,15 +443,21 @@ func (r *repositoryResource) Update(ctx context.Context, req resource.UpdateRequ
 
 	body := buildRepoPatchBody(ctx, &plan)
 	bodyJSON := marshalJSON(body, &resp.Diagnostics)
-	if bodyJSON == nil { return }
+	if bodyJSON == nil {
+		return
+	}
 
 	endpoint := fmt.Sprintf("%s/api/v1/repos/%d", r.client.Host, state.ID.ValueInt64())
 	httpResp, ok := doRequest(ctx, r.client, http.MethodPatch, endpoint, bodyJSON, []int{http.StatusOK}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	var result repositoryAPIResponse
-	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) {
+		return
+	}
 
 	mapRepoToState(&result, &plan)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -452,7 +472,9 @@ func (r *repositoryResource) Delete(ctx context.Context, req resource.DeleteRequ
 
 	endpoint := fmt.Sprintf("%s/api/v1/repos/%d", r.client.Host, data.ID.ValueInt64())
 	httpResp, ok := doRequest(ctx, r.client, http.MethodDelete, endpoint, nil, []int{http.StatusNoContent, http.StatusOK}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	httpResp.Body.Close()
 }
 

@@ -21,8 +21,8 @@ type repositorySecretsDataSource struct {
 }
 
 type repositorySecretsDataSourceModel struct {
-	RepoID  types.Int64                  `tfsdk:"repo_id"`
-	Secrets []repositorySecretItemModel  `tfsdk:"secrets"`
+	RepoID  types.Int64                 `tfsdk:"repo_id"`
+	Secrets []repositorySecretItemModel `tfsdk:"secrets"`
 }
 
 type repositorySecretItemModel struct {

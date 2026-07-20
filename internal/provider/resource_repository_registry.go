@@ -42,10 +42,10 @@ type repositoryRegistryResourceModel struct {
 	Username types.String `tfsdk:"username"`
 	Password types.String `tfsdk:"password"`
 	// computed
-	ID        types.Int64  `tfsdk:"id"`
-	ReadOnly  types.Bool   `tfsdk:"readonly"`
-	CreatedAt types.Int64  `tfsdk:"created_at"`
-	UpdatedAt types.Int64  `tfsdk:"updated_at"`
+	ID        types.Int64 `tfsdk:"id"`
+	ReadOnly  types.Bool  `tfsdk:"readonly"`
+	CreatedAt types.Int64 `tfsdk:"created_at"`
+	UpdatedAt types.Int64 `tfsdk:"updated_at"`
 }
 
 func (r *repositoryRegistryResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -141,15 +141,21 @@ func (r *repositoryRegistryResource) Create(ctx context.Context, req resource.Cr
 	}
 
 	bodyJSON := marshalJSON(body, &resp.Diagnostics)
-	if bodyJSON == nil { return }
+	if bodyJSON == nil {
+		return
+	}
 
 	endpoint := fmt.Sprintf("%s/api/v1/repos/%d/registries", r.client.Host, data.RepoID.ValueInt64())
 	httpResp, ok := doRequest(ctx, r.client, http.MethodPost, endpoint, bodyJSON, []int{http.StatusOK}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	var result registryAPIResponse
-	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) {
+		return
+	}
 
 	password := data.Password
 	mapRepoRegistryToState(&result, &data)
@@ -168,7 +174,9 @@ func (r *repositoryRegistryResource) Read(ctx context.Context, req resource.Read
 
 	endpoint := fmt.Sprintf("%s/api/v1/repos/%d/registries/%s", r.client.Host, data.RepoID.ValueInt64(), data.Address.ValueString())
 	httpResp, ok := doRequest(ctx, r.client, http.MethodGet, endpoint, nil, []int{http.StatusOK, http.StatusNotFound}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	if httpResp.StatusCode == http.StatusNotFound {
@@ -177,7 +185,9 @@ func (r *repositoryRegistryResource) Read(ctx context.Context, req resource.Read
 	}
 
 	var result registryAPIResponse
-	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) {
+		return
+	}
 
 	password := data.Password
 	mapRepoRegistryToState(&result, &data)
@@ -215,15 +225,21 @@ func (r *repositoryRegistryResource) Update(ctx context.Context, req resource.Up
 	}
 
 	bodyJSON := marshalJSON(body, &resp.Diagnostics)
-	if bodyJSON == nil { return }
+	if bodyJSON == nil {
+		return
+	}
 
 	endpoint := fmt.Sprintf("%s/api/v1/repos/%d/registries/%s", r.client.Host, state.RepoID.ValueInt64(), state.Address.ValueString())
 	httpResp, ok := doRequest(ctx, r.client, http.MethodPatch, endpoint, bodyJSON, []int{http.StatusOK}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	var result registryAPIResponse
-	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) {
+		return
+	}
 
 	password := plan.Password
 	mapRepoRegistryToState(&result, &plan)
@@ -242,7 +258,9 @@ func (r *repositoryRegistryResource) Delete(ctx context.Context, req resource.De
 
 	endpoint := fmt.Sprintf("%s/api/v1/repos/%d/registries/%s", r.client.Host, data.RepoID.ValueInt64(), data.Address.ValueString())
 	httpResp, ok := doRequest(ctx, r.client, http.MethodDelete, endpoint, nil, []int{http.StatusNoContent, http.StatusOK}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	httpResp.Body.Close()
 }
 

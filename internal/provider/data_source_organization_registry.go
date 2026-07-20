@@ -93,7 +93,9 @@ func (d *organizationRegistryDataSource) Read(ctx context.Context, req datasourc
 
 	endpoint := fmt.Sprintf("%s/api/v1/orgs/%d/registries/%s", d.client.Host, data.OrgID.ValueInt64(), data.Address.ValueString())
 	httpResp, ok := doRequest(ctx, d.client, http.MethodGet, endpoint, nil, []int{http.StatusOK, http.StatusNotFound}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	if httpResp.StatusCode == http.StatusNotFound {
@@ -105,7 +107,9 @@ func (d *organizationRegistryDataSource) Read(ctx context.Context, req datasourc
 	}
 
 	var result registryAPIResponse
-	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) {
+		return
+	}
 
 	data.ID = types.Int64Value(result.ID)
 	data.Username = types.StringValue(result.Username)

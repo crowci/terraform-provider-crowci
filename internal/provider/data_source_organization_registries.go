@@ -21,8 +21,8 @@ type organizationRegistriesDataSource struct {
 }
 
 type organizationRegistriesDataSourceModel struct {
-	OrgID      types.Int64             `tfsdk:"org_id"`
-	Registries []registryItemModel     `tfsdk:"registries"`
+	OrgID      types.Int64         `tfsdk:"org_id"`
+	Registries []registryItemModel `tfsdk:"registries"`
 }
 
 type registryItemModel struct {
@@ -72,8 +72,8 @@ func (d *organizationRegistriesDataSource) Read(ctx context.Context, req datasou
 	registries := make([]registryItemModel, len(all))
 	for i, r := range all {
 		registries[i] = registryItemModel{
-			ID:      types.Int64Value(r.ID),
-			Address: types.StringValue(r.Address),
+			ID:        types.Int64Value(r.ID),
+			Address:   types.StringValue(r.Address),
 			Username:  types.StringValue(r.Username),
 			ReadOnly:  types.BoolValue(r.ReadOnly),
 			CreatedAt: types.Int64Value(r.CreatedAt),

@@ -109,7 +109,9 @@ func (d *repositoryCronJobDataSource) Read(ctx context.Context, req datasource.R
 
 	endpoint := fmt.Sprintf("%s/api/v1/repos/%d/cron/%d", d.client.Host, data.RepoID.ValueInt64(), data.ID.ValueInt64())
 	httpResp, ok := doRequest(ctx, d.client, http.MethodGet, endpoint, nil, []int{http.StatusOK, http.StatusNotFound}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	if httpResp.StatusCode == http.StatusNotFound {
@@ -121,7 +123,9 @@ func (d *repositoryCronJobDataSource) Read(ctx context.Context, req datasource.R
 	}
 
 	var result cronJobAPIResponse
-	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) {
+		return
+	}
 
 	data.Name = types.StringValue(result.Name)
 	data.Schedule = types.StringValue(result.Schedule)

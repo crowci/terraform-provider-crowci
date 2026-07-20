@@ -57,10 +57,10 @@ type organizationRegistryResourceModel struct {
 	Username types.String `tfsdk:"username"`
 	Password types.String `tfsdk:"password"`
 	// computed
-	ID       types.Int64 `tfsdk:"id"`
-	ReadOnly types.Bool  `tfsdk:"readonly"`
-	CreatedAt types.Int64  `tfsdk:"created_at"`
-	UpdatedAt types.Int64  `tfsdk:"updated_at"`
+	ID        types.Int64 `tfsdk:"id"`
+	ReadOnly  types.Bool  `tfsdk:"readonly"`
+	CreatedAt types.Int64 `tfsdk:"created_at"`
+	UpdatedAt types.Int64 `tfsdk:"updated_at"`
 }
 
 type registryAPIResponse struct {
@@ -153,15 +153,21 @@ func (r *organizationRegistryResource) Create(ctx context.Context, req resource.
 	}
 
 	bodyJSON := marshalJSON(body, &resp.Diagnostics)
-	if bodyJSON == nil { return }
+	if bodyJSON == nil {
+		return
+	}
 
 	endpoint := fmt.Sprintf("%s/api/v1/orgs/%d/registries", r.client.Host, data.OrgID.ValueInt64())
 	httpResp, ok := doRequest(ctx, r.client, http.MethodPost, endpoint, bodyJSON, []int{http.StatusOK}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	var result registryAPIResponse
-	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) {
+		return
+	}
 
 	password := data.Password
 	mapOrgRegistryToState(&result, &data)
@@ -180,7 +186,9 @@ func (r *organizationRegistryResource) Read(ctx context.Context, req resource.Re
 
 	endpoint := fmt.Sprintf("%s/api/v1/orgs/%d/registries/%s", r.client.Host, data.OrgID.ValueInt64(), data.Address.ValueString())
 	httpResp, ok := doRequest(ctx, r.client, http.MethodGet, endpoint, nil, []int{http.StatusOK, http.StatusNotFound}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	if httpResp.StatusCode == http.StatusNotFound {
@@ -189,7 +197,9 @@ func (r *organizationRegistryResource) Read(ctx context.Context, req resource.Re
 	}
 
 	var result registryAPIResponse
-	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) {
+		return
+	}
 
 	password := data.Password
 	mapOrgRegistryToState(&result, &data)
@@ -227,15 +237,21 @@ func (r *organizationRegistryResource) Update(ctx context.Context, req resource.
 	}
 
 	bodyJSON := marshalJSON(body, &resp.Diagnostics)
-	if bodyJSON == nil { return }
+	if bodyJSON == nil {
+		return
+	}
 
 	endpoint := fmt.Sprintf("%s/api/v1/orgs/%d/registries/%s", r.client.Host, state.OrgID.ValueInt64(), state.Address.ValueString())
 	httpResp, ok := doRequest(ctx, r.client, http.MethodPatch, endpoint, bodyJSON, []int{http.StatusOK}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	var result registryAPIResponse
-	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) {
+		return
+	}
 
 	password := plan.Password
 	mapOrgRegistryToState(&result, &plan)
@@ -254,7 +270,9 @@ func (r *organizationRegistryResource) Delete(ctx context.Context, req resource.
 
 	endpoint := fmt.Sprintf("%s/api/v1/orgs/%d/registries/%s", r.client.Host, data.OrgID.ValueInt64(), data.Address.ValueString())
 	httpResp, ok := doRequest(ctx, r.client, http.MethodDelete, endpoint, nil, []int{http.StatusNoContent, http.StatusOK}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	httpResp.Body.Close()
 }
 

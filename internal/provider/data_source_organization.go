@@ -81,7 +81,9 @@ func (d *organizationDataSource) Read(ctx context.Context, req datasource.ReadRe
 
 	endpoint := fmt.Sprintf("%s/api/v1/orgs/%d", d.client.Host, data.ID.ValueInt64())
 	httpResp, ok := doRequest(ctx, d.client, http.MethodGet, endpoint, nil, []int{http.StatusOK, http.StatusNotFound}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	if httpResp.StatusCode == http.StatusNotFound {
@@ -93,7 +95,9 @@ func (d *organizationDataSource) Read(ctx context.Context, req datasource.ReadRe
 	}
 
 	var result organizationAPIResponse
-	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) {
+		return
+	}
 
 	data.ForgeID = int64NullIfZero(result.ForgeID)
 	data.Name = types.StringValue(result.Name)

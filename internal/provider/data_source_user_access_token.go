@@ -107,11 +107,15 @@ func (d *userAccessTokenDataSource) Read(ctx context.Context, req datasource.Rea
 
 	endpoint := fmt.Sprintf("%s/api/v1/user/access-tokens/%d", d.client.Host, data.TokenID.ValueInt64())
 	httpResp, ok := doRequest(ctx, d.client, http.MethodGet, endpoint, nil, []int{http.StatusOK}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	var result accessTokenAPIResponse
-	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &result, &resp.Diagnostics) {
+		return
+	}
 
 	data.ID = types.Int64Value(result.ID)
 	data.Name = types.StringValue(result.Name)

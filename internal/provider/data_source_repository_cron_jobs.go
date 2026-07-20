@@ -21,8 +21,8 @@ type repositoryCronJobsDataSource struct {
 }
 
 type repositoryCronJobsDataSourceModel struct {
-	RepoID   types.Int64              `tfsdk:"repo_id"`
-	CronJobs []cronJobItemModel       `tfsdk:"cron_jobs"`
+	RepoID   types.Int64        `tfsdk:"repo_id"`
+	CronJobs []cronJobItemModel `tfsdk:"cron_jobs"`
 }
 
 type cronJobItemModel struct {

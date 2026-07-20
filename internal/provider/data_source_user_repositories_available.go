@@ -107,11 +107,15 @@ func (d *userRepositoriesAvailableDataSource) Read(ctx context.Context, req data
 	}
 
 	httpResp, ok := doRequest(ctx, d.client, http.MethodGet, endpoint, nil, []int{http.StatusOK}, &resp.Diagnostics)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	defer httpResp.Body.Close()
 
 	var results []repositoryAPIResponse
-	if !decodeJSON(httpResp.Body, &results, &resp.Diagnostics) { return }
+	if !decodeJSON(httpResp.Body, &results, &resp.Diagnostics) {
+		return
+	}
 
 	repos := make([]availableRepositoryItemModel, len(results))
 	for i, r := range results {

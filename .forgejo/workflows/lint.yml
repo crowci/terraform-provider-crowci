@@ -1,0 +1,114 @@
+# Linting workflow for the Terraform provider (Go code and example HCL).
+name: Lint
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+# Reduce noise: cancel superseded runs on the same ref.
+concurrency:
+  group: lint-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  golangci-lint:
+    name: golangci-lint
+    runs-on: ubuntu-latest
+    # The runner image ships no C headers; keep cgo disabled so the type
+    # checker uses the pure-Go standard library (net, crypto/tls, os/user).
+    env:
+      CGO_ENABLED: "0"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+          cache: true
+      # Third-party actions are not mirrored on the Forgejo instance's default
+      # actions registry, so they are referenced by their full GitHub URL.
+      - uses: https://github.com/golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.12.2
+
+  terraform-fmt:
+    name: terraform fmt
+    runs-on: ubuntu-latest
+    env:
+      TERRAFORM_VERSION: "1.15.8"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      # Install terraform from releases.hashicorp.com rather than via mise: the
+      # runner cannot authenticate to the GitHub API that mise's aqua backend
+      # needs, and this job only needs the terraform binary.
+      - name: Install terraform
+        run: |
+          case "$(uname -m)" in
+            x86_64) arch=amd64 ;;
+            aarch64 | arm64) arch=arm64 ;;
+            *) echo "unsupported arch $(uname -m)" >&2; exit 1 ;;
+          esac
+          mkdir -p "${HOME}/.local/bin"
+          curl -sfLo /tmp/terraform.zip "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_${arch}.zip"
+          unzip -oq /tmp/terraform.zip terraform -d "${HOME}/.local/bin"
+          echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
+      - name: Check formatting of example HCL
+        run: terraform fmt -check -recursive -diff examples
+
+  tflint:
+    name: tflint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: https://github.com/terraform-linters/setup-tflint@6e1e0642c0289bd619021bf6b34e3c08ed1e005a # v6.3.0
+        with:
+          tflint_version: v0.64.0
+      - name: Init tflint plugins
+        run: tflint --init --config="${GITHUB_WORKSPACE}/.tflint.hcl"
+      - name: Lint example HCL
+        run: tflint --recursive --config="${GITHUB_WORKSPACE}/.tflint.hcl"
+
+  docs:
+    name: docs up to date
+    runs-on: ubuntu-latest
+    # tfplugindocs builds the provider to introspect its schema; keep cgo off
+    # for the same reason as the golangci-lint job.
+    env:
+      CGO_ENABLED: "0"
+      TERRAFORM_VERSION: "1.15.8"
+      TFPLUGINDOCS_VERSION: "0.25.0"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Install terraform
+        run: |
+          case "$(uname -m)" in
+            x86_64) arch=amd64 ;;
+            aarch64 | arm64) arch=arm64 ;;
+            *) echo "unsupported arch $(uname -m)" >&2; exit 1 ;;
+          esac
+          mkdir -p "${HOME}/.local/bin"
+          curl -sfLo /tmp/terraform.zip "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_${arch}.zip"
+          unzip -oq /tmp/terraform.zip terraform -d "${HOME}/.local/bin"
+          echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
+      - name: Install tfplugindocs
+        # go install uses the module proxy, avoiding the GitHub API that mise's
+        # aqua backend cannot authenticate to on this runner.
+        run: go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@v${TFPLUGINDOCS_VERSION}
+      - name: Regenerate provider docs
+        # Provider name matches the committed docs (and bare `mise run docs`),
+        # so an unchanged tree means the docs are in sync.
+        run: tfplugindocs generate --provider-name terraform-provider-crowci
+      - name: Fail if docs are out of date
+        run: |
+          if ! git diff --exit-code -- docs; then
+            echo "::error::Generated docs are out of date. Run 'mise run docs' and commit the result." >&2
+            exit 1
+          fi

@@ -1,0 +1,100 @@
+# Security scanning workflow: Go vulnerabilities, Go SAST and repository
+# misconfiguration/secret scanning.
+name: Security
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  schedule:
+    # Weekly re-scan so newly disclosed advisories are caught on a quiet repo.
+    - cron: "0 6 * * 1"
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  govulncheck:
+    name: govulncheck
+    runs-on: ubuntu-latest
+    # The provider is a pure-Go, CGO_ENABLED=0 artifact and the runner image
+    # ships no C headers, so keep cgo disabled when building the tooling.
+    env:
+      CGO_ENABLED: "0"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+          # Module and build caches keyed on go.sum; this keeps the govulncheck
+          # compile fast without caching an arch-specific binary ourselves.
+          cache: true
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@v1.1.4
+      - name: Scan for known Go vulnerabilities
+        run: govulncheck ./...
+
+  gosec:
+    name: gosec
+    runs-on: ubuntu-latest
+    # gosec's package loading may build dependencies, but the runner image
+    # ships no C headers, so keep cgo disabled (the provider is pure Go).
+    env:
+      CGO_ENABLED: "0"
+      GOSEC_VERSION: "2.28.0"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Install gosec
+        run: |
+          case "$(uname -m)" in
+            x86_64) arch=linux_amd64 ;;
+            aarch64 | arm64) arch=linux_arm64 ;;
+            *) echo "unsupported arch $(uname -m)" >&2; exit 1 ;;
+          esac
+          mkdir -p "${HOME}/.local/bin"
+          curl -sfL "https://github.com/securego/gosec/releases/download/v${GOSEC_VERSION}/gosec_${GOSEC_VERSION}_${arch}.tar.gz" \
+            | tar -xzf - -C "${HOME}/.local/bin" gosec
+          echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
+      - name: Run Go security analysis
+        # Fail on medium+ findings; the low-severity G104 noise from the
+        # conventional httpResp.Body.Close() pattern is intentionally allowed.
+        run: gosec -exclude-generated -severity medium ./...
+
+  trivy:
+    name: trivy
+    runs-on: ubuntu-latest
+    env:
+      # trivy-action expects a preinstalled binary, which this runner image
+      # does not ship, so install the release binary directly instead.
+      TRIVY_VERSION: "0.72.0"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Install trivy
+        run: |
+          case "$(uname -m)" in
+            x86_64) arch=Linux-64bit ;;
+            aarch64 | arm64) arch=Linux-ARM64 ;;
+            *) echo "unsupported arch $(uname -m)" >&2; exit 1 ;;
+          esac
+          mkdir -p "${HOME}/.local/bin"
+          curl -sfL "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_${arch}.tar.gz" \
+            | tar -xzf - -C "${HOME}/.local/bin" trivy
+          echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
+      - name: Scan filesystem for vulnerabilities, secrets and misconfigurations
+        run: |
+          trivy fs \
+            --scanners vuln,secret,misconfig \
+            --severity HIGH,CRITICAL \
+            --ignore-unfixed \
+            --exit-code 1 \
+            --no-progress \
+            .
