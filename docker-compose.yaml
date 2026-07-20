@@ -35,7 +35,7 @@ services:
       CROW_AGENT_SECRET: ${CROW_AGENT_SECRET:-abc}
 
   forgejo:
-    image: codeberg.org/forgejo/forgejo:15
+    image: codeberg.org/forgejo/forgejo:16
     restart: always
     environment:
       USER_UID: 1000
