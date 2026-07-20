@@ -1,6 +1,6 @@
 services:
   server:
-    image: codefloe.com/crowci/crow-server:v5.11.2
+    image: codefloe.com/crowci/crow-server:v5.13.0
     restart: always
     ports:
       - ${CROW_SERVER_PORTS:-8000}:8000
