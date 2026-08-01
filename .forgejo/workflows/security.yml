@@ -15,8 +15,7 @@ concurrency:
   group: security-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
+# No `permissions` block: Forgejo ignores the field and warns about it.
 
 jobs:
   govulncheck:

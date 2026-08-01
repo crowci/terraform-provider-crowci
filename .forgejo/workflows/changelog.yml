@@ -13,9 +13,9 @@ concurrency:
   group: changelog-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
-  issues: write
+# No `permissions` block: Forgejo ignores the field and warns about it. What
+# the automatic token may do is decided by the repository's Authorized
+# Integrations settings instead.
 
 jobs:
   changelog:
