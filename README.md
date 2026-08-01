@@ -64,3 +64,21 @@
 
 - This file can be useful for feeding into coding agent for generating the code
 - Endpoint for api docs: `http://localhost:8000/api/v1/docs`
+
+### Releasing
+
+Changelog and release notes are derived from the conventional commit history by [git-sv](https://github.com/thegeeklab/git-sv), configured in [.gitsv/config.yaml](./.gitsv/config.yaml).
+
+Every push to `main` refreshes the "Changelog for upcoming version" issue on Codefloe with the notes for the unreleased commits.
+The workflow needs an `ISSUE_TOKEN` secret holding a bot token with issue write access.
+
+Preview the same notes locally with git-sv installed:
+
+```bash
+# notes for the unreleased commits
+git-sv release-notes
+# version the next tag would get
+git-sv next-version
+```
+
+Pushing a `v*` tag runs GoReleaser on the GitHub mirror, which publishes the registry artifacts with the git-sv notes as the release body.

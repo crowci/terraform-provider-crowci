@@ -31,10 +31,34 @@ jobs:
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
+      - name: Install git-sv
+        env:
+          # renovate: datasource=github-releases depName=thegeeklab/git-sv
+          GIT_SV_VERSION: "2.1.3"
+        run: |
+          case "$(uname -m)" in
+            x86_64) arch=amd64 ;;
+            aarch64 | arm64) arch=arm64 ;;
+            *) echo "unsupported arch $(uname -m)" >&2; exit 1 ;;
+          esac
+          mkdir -p "${HOME}/.local/bin"
+          curl -sfLo "${HOME}/.local/bin/git-sv" \
+            "https://github.com/thegeeklab/git-sv/releases/download/v${GIT_SV_VERSION}/git-sv-linux-${arch}"
+          chmod +x "${HOME}/.local/bin/git-sv"
+          echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
+      - name: Generate release notes
+        # Written outside the work tree: goreleaser refuses to release from a
+        # dirty git state. This is why the goreleaser changelog stays disabled.
+        run: |
+          git-sv release-notes -t "${GITHUB_REF_NAME}" -o "${RUNNER_TEMP}/release-notes.md"
+          # Drop the "## v1.2.3 (date)" heading and its blank line; the release
+          # title already carries the version.
+          sed -i '1,2d' "${RUNNER_TEMP}/release-notes.md"
+          cat "${RUNNER_TEMP}/release-notes.md"
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         with:
-          args: release --clean
+          args: release --clean --release-notes=${{ runner.temp }}/release-notes.md
         env:
           # GitHub sets the GITHUB_TOKEN secret automatically.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
