@@ -70,7 +70,7 @@
 Changelog and release notes are derived from the conventional commit history by [git-sv](https://github.com/thegeeklab/git-sv), configured in [.gitsv/config.yaml](./.gitsv/config.yaml).
 
 Every push to `main` refreshes the "Changelog for upcoming version" issue on Codefloe with the notes for the unreleased commits.
-The workflow needs an `ISSUE_TOKEN` secret holding a bot token with issue write access.
+The workflow writes the issue with the automatic Actions token, so it needs no extra secret.
 
 Preview the same notes locally with git-sv installed:
 
